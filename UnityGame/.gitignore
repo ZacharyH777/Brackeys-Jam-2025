@@ -22,7 +22,7 @@
 [Aa]ssets/assetstoretools*
 
 # JetBrains Rider
-# [Aa]ssets/Plugins/Editor/JetBrains*
+# [Aa]ssets/Plugins/Editor/JetBrains* // maybe need to do this too
 *.DotSettings.user
 
 # PlasticSCM plugin (both casings)
@@ -118,4 +118,4 @@ Desktop.ini
 # Case-insensitive helpers (already covered by bracketed forms above; kept to match your list)
 /assets/streamingassets/*/aa/*
 /assets/assetstoretools
-# /assets/plugins/PlasticSCM*
+# /assets/plugins/PlasticSCM* // maybe need to do this
