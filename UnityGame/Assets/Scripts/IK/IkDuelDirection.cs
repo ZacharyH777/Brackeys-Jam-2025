@@ -4,8 +4,7 @@ using ik_data;
 
 /*
 * FABRIK 2D dual-end solver; rotates pivots around local Z.
-* Adds a pull toward a user-defined Transform line to reduce cycling.
-*
+* Adds stabilization against cycling: global damping, adaptive pass order, 2-cycle breaker.
 */
 
 [DisallowMultipleComponent]
@@ -75,13 +74,28 @@ public sealed class IkDualEndEffectorSolver : MonoBehaviour
     [Tooltip("Run in LateUpdate (Play)")]
     public bool solve_in_play_mode = true;
 
+    [Header("Stability")]
+    [Range(0f, 1f), Tooltip("Blend new solve toward previous pose each iteration")]
+    public float global_damping = 0.85f;
+    [Tooltip("Choose pass order based on which end has larger error each iteration")]
+    public bool adaptive_pass_order = true;
+    [Tooltip("Detect A<->B iteration flip and blend to break it")]
+    public bool break_two_cycle = true;
+    [Min(0f), Tooltip("Squared position delta threshold to consider two poses identical")]
+    public float two_cycle_eps2 = 1e-10f;
+    [Range(0f, 1f), Tooltip("How much to mix when breaking the 2-cycle")]
+    public float two_cycle_mix = 0.5f;
+
     [Header("Debug")]
     [Tooltip("Draw bones and targets")]
     public bool debug_draw;
     [Tooltip("Gizmo color")]
     public Color debug_color = new(0.2f, 1f, 0.6f, 1f);
 
-    private Vector3[] p_ls;
+    // Working state
+    private Vector3[] p_ls;           // current joint positions in solve space
+    private Vector3[] p_prev_ls;      // previous iteration pose
+    private Vector3[] p_prev2_ls;     // pose from two iterations ago
     private float[] segment_lengths;
     private float total_len;
     private int count;
@@ -90,39 +104,26 @@ public sealed class IkDualEndEffectorSolver : MonoBehaviour
     private Vector3 anchor_a_prev_ls, anchor_b_prev_ls;
     private bool anchors_init;
 
-    /*
-    * Unity lifecycle
-    *
-    */
+    // Unity lifecycle
     void Awake()
     {
         if (!ik_builder) ik_builder = GetComponent<IkChainBuilder>();
     }
 
-    /*
-    * Unity lifecycle
-    *
-    */
     void OnEnable()
     {
         if (!ik_builder) ik_builder = GetComponent<IkChainBuilder>();
         initialized = false;
+        anchors_init = false;
     }
 
-    /*
-    * Unity lifecycle
-    *
-    */
     void LateUpdate()
     {
         if (!Application.isPlaying || !solve_in_play_mode) return;
         SolveNow();
     }
 
-    /*
-    * Execute one FABRIK solve and apply local-Z rotations with pull
-    *
-    */
+    // Execute one FABRIK solve and apply local-Z rotations with stabilization
     public void SolveNow()
     {
         if (!Application.isPlaying) return;
@@ -140,6 +141,7 @@ public sealed class IkDualEndEffectorSolver : MonoBehaviour
         if (!initialized || solve_space != desired_space || count != chain.bone_chain.Count || p_ls == null || segment_lengths == null)
             InitFromChain(chain, desired_space);
 
+        // Read current bone positions into p_ls (solve space)
         for (int i = 0; i < count; i++)
         {
             Transform bone_i_transform = chain.bone_chain[i].transform;
@@ -147,36 +149,30 @@ public sealed class IkDualEndEffectorSolver : MonoBehaviour
             p_ls[i] = ToSpacePoint(bone_i_transform.position);
         }
 
-        Vector3 tip_now_world;
+        // Get tip/root current world for default anchors
         Transform tip_transform = chain.bone_chain[count - 1].transform;
-        if (tip_transform != null) tip_now_world = tip_transform.position;
-        else tip_now_world = FromSpacePoint(p_ls[count - 1]);
+        Vector3 tip_now_world = tip_transform ? tip_transform.position : FromSpacePoint(p_ls[count - 1]);
 
-        Vector3 root_now_world;
-        if (root_transform != null) root_now_world = root_transform.position;
-        else root_now_world = FromSpacePoint(p_ls[0]);
+        Vector3 root_now_world = root_transform ? root_transform.position : FromSpacePoint(p_ls[0]);
 
-        Vector3 anchor_a_ls;
-        if (target_tip_a != null) anchor_a_ls = ToSpacePoint(target_tip_a.position);
-        else anchor_a_ls = ToSpacePoint(tip_now_world);
+        // Anchors (solve space)
+        Vector3 anchor_a_ls = target_tip_a ? ToSpacePoint(target_tip_a.position) : ToSpacePoint(tip_now_world);
+        Vector3 anchor_b_ls = target_root_b ? ToSpacePoint(target_root_b.position) : ToSpacePoint(root_now_world);
 
-        Vector3 anchor_b_ls;
-        if (target_root_b != null) anchor_b_ls = ToSpacePoint(target_root_b.position);
-        else anchor_b_ls = ToSpacePoint(root_now_world);
-
+        // Target smoothing
         if (!anchors_init)
         {
             anchor_a_prev_ls = anchor_a_ls;
             anchor_b_prev_ls = anchor_b_ls;
             anchors_init = true;
         }
-
         float smoothing_blend = 1f - target_smoothing;
         anchor_a_ls = Vector3.Lerp(anchor_a_prev_ls, anchor_a_ls, smoothing_blend);
         anchor_b_ls = Vector3.Lerp(anchor_b_prev_ls, anchor_b_ls, smoothing_blend);
         anchor_a_prev_ls = anchor_a_ls;
         anchor_b_prev_ls = anchor_b_ls;
 
+        // If unreachable, straighten and apply
         float anchors_dist = Dist2D(anchor_a_ls, anchor_b_ls);
         if (anchors_dist > total_len)
         {
@@ -185,37 +181,69 @@ public sealed class IkDualEndEffectorSolver : MonoBehaviour
             return;
         }
 
-        Vector3 pull_end_ls = anchor_a_ls;
-        if (pull_target != null) pull_end_ls = ToSpacePoint(pull_target.position);
+        // Pull line end (solve space)
+        Vector3 pull_end_ls = pull_target ? ToSpacePoint(pull_target.position) : anchor_a_ls;
 
+        // Seed end errors
+        float errTip = Dist2D(p_ls[count - 1], anchor_a_ls);
+        float errRoot = Dist2D(p_ls[0], anchor_b_ls);
+
+        // Iterations with stabilization
         for (int it = 0; it < iterations; it++)
         {
-            if (solve_mode == SolveMode.RootFirst)
+            // History rotate: prev2 <- prev <- cur
+            var swap = p_prev2_ls;
+            p_prev2_ls = p_prev_ls;
+            p_prev_ls = (Vector3[])p_ls.Clone();
+
+            // Decide pass order
+            bool doTipFirst;
+            if (solve_mode == SolveMode.TipFirst) doTipFirst = true;
+            else if (solve_mode == SolveMode.RootFirst) doTipFirst = false;
+            else
             {
-                RootPass(anchor_b_ls);
-                TipPass(anchor_a_ls);
+                doTipFirst = adaptive_pass_order ? (errTip >= errRoot) : ((it & 1) == 0);
             }
-            else if (solve_mode == SolveMode.TipFirst)
+
+            // Passes
+            if (doTipFirst)
             {
                 TipPass(anchor_a_ls);
                 RootPass(anchor_b_ls);
             }
             else
             {
-                if ((it & 1) == 0) { TipPass(anchor_a_ls); RootPass(anchor_b_ls); }
-                else               { RootPass(anchor_b_ls); TipPass(anchor_a_ls); }
+                RootPass(anchor_b_ls);
+                TipPass(anchor_a_ls);
             }
 
+            // Optional pull passes
             for (int p = 0; p < pull_passes; p++)
-            {
                 TensionPass(anchor_b_ls, pull_end_ls);
+
+            // Global damping toward previous iterate
+            if (global_damping < 1f)
+                MixWithPrevious(p_ls, p_prev_ls, count, global_damping);
+
+            // 2-cycle detection & break
+            if (break_two_cycle && p_prev2_ls != null)
+            {
+                float dPrev  = SumSq(p_ls, p_prev_ls,  count);
+                float dPrev2 = SumSq(p_ls, p_prev2_ls, count);
+
+                if (dPrev2 <= two_cycle_eps2 && dPrev > dPrev2 * 16f)
+                {
+                    MixWithPrevious(p_ls, p_prev_ls, count, two_cycle_mix);
+                }
             }
 
-            float e_a = Dist2D(p_ls[count - 1], anchor_a_ls);
-            float e_b = Dist2D(p_ls[0],        anchor_b_ls);
-            if (e_a <= tolerance && e_b <= tolerance) break;
+            // Recompute errors & early-out
+            errTip  = Dist2D(p_ls[count - 1], anchor_a_ls);
+            errRoot = Dist2D(p_ls[0],         anchor_b_ls);
+            if (errTip <= tolerance && errRoot <= tolerance) break;
         }
 
+        // Optional: stamp root XY to anchor
         if (pin_root_in_solve_space && target_root_b && chain.bone_chain[0].transform)
         {
             Transform root_bone_transform = chain.bone_chain[0].transform;
@@ -225,13 +253,11 @@ public sealed class IkDualEndEffectorSolver : MonoBehaviour
             root_bone_transform.position = FromSpacePoint(current_ls);
         }
 
+        // Apply rotations (Z-only) and optional position stamping
         ApplyRotations(chain);
     }
 
-    /*
-    * Backward pass from tip to root in solve space
-    *
-    */
+    // Backward pass from tip to root in solve space
     private void TipPass(in Vector3 anchor_a_ls)
     {
         p_ls[count - 1] = SnapXY(p_ls[count - 1], anchor_a_ls);
@@ -248,10 +274,7 @@ public sealed class IkDualEndEffectorSolver : MonoBehaviour
         }
     }
 
-    /*
-    * Forward pass from root to tip in solve space
-    *
-    */
+    // Forward pass from root to tip in solve space
     private void RootPass(in Vector3 anchor_b_ls)
     {
         p_ls[0] = SnapXY(p_ls[0], anchor_b_ls);
@@ -268,10 +291,7 @@ public sealed class IkDualEndEffectorSolver : MonoBehaviour
         }
     }
 
-    /*
-    * Straighten between two anchors in solve space
-    *
-    */
+    // Straighten between two anchors in solve space
     private void StraightenBetween(in Vector3 root_ls, in Vector3 tip_ls)
     {
         Vector3 dir = SafeDirPlanar(tip_ls - root_ls);
@@ -289,10 +309,7 @@ public sealed class IkDualEndEffectorSolver : MonoBehaviour
         p_ls[count - 1] = new Vector3(tip_ls.x, tip_ls.y, p_ls[count - 1].z);
     }
 
-    /*
-    * Pull joints toward the line root_ls → pull_end_ls
-    *
-    */
+    // Pull joints toward the line root_ls → pull_end_ls
     private void TensionPass(in Vector3 root_ls, in Vector3 pull_end_ls)
     {
         if (pull_strength <= 0f || pull_passes <= 0) return;
@@ -316,7 +333,7 @@ public sealed class IkDualEndEffectorSolver : MonoBehaviour
 
             float idx01 = (float)i / (float)(count - 1);
             float bias_w = 1f;
-            if (pull_bias > 0f) bias_w = Mathf.Lerp(1f, idx01, pull_bias);
+            if (pull_bias > 0f)      bias_w = Mathf.Lerp(1f, idx01,       pull_bias);
             else if (pull_bias < 0f) bias_w = Mathf.Lerp(1f, 1f - idx01, -pull_bias);
 
             float w = pull_strength * bias_w;
@@ -324,29 +341,26 @@ public sealed class IkDualEndEffectorSolver : MonoBehaviour
         }
     }
 
-    /*
-    * Initialize working buffers from chain and choose solve space
-    *
-    */
+    // Initialize working buffers from chain and choose solve space
     private void InitFromChain(IkChain chain, Transform desired_space)
     {
         solve_space = desired_space;
         count = chain.bone_chain.Count;
         p_ls = new Vector3[count];
+        p_prev_ls = new Vector3[count];
+        p_prev2_ls = new Vector3[count];
         segment_lengths = new float[count - 1];
         total_len = 0f;
 
         for (int i = 0; i < count - 1; i++)
         {
             Transform parent_bone_transform = chain.bone_chain[i].transform;
-            Transform child_bone_transform = chain.bone_chain[i + 1].transform;
+            Transform child_bone_transform  = chain.bone_chain[i + 1].transform;
 
-            Vector3 parent_bone_ls;
-            if (parent_bone_transform != null) parent_bone_ls = ToSpacePoint(parent_bone_transform.position);
-            else parent_bone_ls = Vector3.zero;
+            Vector3 parent_bone_ls = parent_bone_transform ? ToSpacePoint(parent_bone_transform.position) : Vector3.zero;
 
             Vector3 child_bone_ls;
-            if (child_bone_transform != null) child_bone_ls = ToSpacePoint(child_bone_transform.position);
+            if (child_bone_transform) child_bone_ls = ToSpacePoint(child_bone_transform.position);
             else
             {
                 float fallback_y = Mathf.Max(0.1f, i == 0 ? 0.1f : segment_lengths[i - 1]);
@@ -354,11 +368,7 @@ public sealed class IkDualEndEffectorSolver : MonoBehaviour
             }
 
             float len = Dist2D(parent_bone_ls, child_bone_ls);
-            if (len <= 1e-6f)
-            {
-                if (i > 0) len = segment_lengths[i - 1];
-                else len = 0.1f;
-            }
+            if (len <= 1e-6f) len = (i > 0 ? segment_lengths[i - 1] : 0.1f);
 
             segment_lengths[i] = len;
             total_len += len;
@@ -367,17 +377,16 @@ public sealed class IkDualEndEffectorSolver : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             Transform bone_i_transform = chain.bone_chain[i].transform;
-            if (bone_i_transform != null) p_ls[i] = ToSpacePoint(bone_i_transform.position);
-            else p_ls[i] = Vector3.zero;
+            p_ls[i] = bone_i_transform ? ToSpacePoint(bone_i_transform.position) : Vector3.zero;
+            p_prev_ls[i] = p_ls[i];
+            p_prev2_ls[i] = p_ls[i];
         }
 
+        anchors_init = false;
         initialized = true;
     }
 
-    /*
-    * Apply Z-only local rotations toward solved segment directions
-    *
-    */
+    // Apply Z-only local rotations toward solved segment directions (and optional position stamping)
     private void ApplyRotations(IkChain chain)
     {
         if (!rotation_only)
@@ -416,13 +425,8 @@ public sealed class IkDualEndEffectorSolver : MonoBehaviour
             current_dir_world.z = 0f;
             if (current_dir_world.sqrMagnitude < 1e-10f) continue;
 
-            Vector3 desired_local;
-            if (parent_transform != null) desired_local = parent_transform.InverseTransformDirection(desired_dir_world);
-            else desired_local = desired_dir_world;
-
-            Vector3 current_local;
-            if (parent_transform != null) current_local = parent_transform.InverseTransformDirection(current_dir_world);
-            else current_local = current_dir_world;
+            Vector3 desired_local = parent_transform ? parent_transform.InverseTransformDirection(desired_dir_world) : desired_dir_world;
+            Vector3 current_local = parent_transform ? parent_transform.InverseTransformDirection(current_dir_world) : current_dir_world;
 
             desired_local.z = 0f;
             current_local.z = 0f;
@@ -449,6 +453,7 @@ public sealed class IkDualEndEffectorSolver : MonoBehaviour
             if (unscale_during_rotation) pivot_transform.localScale = saved_scale;
         }
 
+        // Write final effector info
         ref EndEffector eff = ref ik_builder.GetEffectorRef();
         Transform tip_transform_final = chain.bone_chain[count - 1].transform;
         if (tip_transform_final)
@@ -458,70 +463,39 @@ public sealed class IkDualEndEffectorSolver : MonoBehaviour
         }
     }
 
-    /*
-    * Convert world point to solve space
-    *
-    */
+    // --- Space conversions ---
     private Vector3 ToSpacePoint(Vector3 world_point)
     {
         if (solve_space != null) return solve_space.InverseTransformPoint(world_point);
         return world_point;
     }
-
-    /*
-    * Convert solve-space point to world
-    *
-    */
     private Vector3 FromSpacePoint(Vector3 space_point)
     {
         if (solve_space != null) return solve_space.TransformPoint(space_point);
         return space_point;
     }
-
-    /*
-    * Convert world dir to solve space
-    *
-    */
     private Vector3 ToSpaceDir(Vector3 world_dir)
     {
         if (solve_space != null) return solve_space.InverseTransformDirection(world_dir);
         return world_dir;
     }
-
-    /*
-    * Convert solve-space dir to world
-    *
-    */
     private Vector3 FromSpaceDir(Vector3 space_dir)
     {
         if (solve_space != null) return solve_space.TransformDirection(space_dir);
         return space_dir;
     }
 
-    /*
-    * Utility: snap XY, keep Z
-    *
-    */
+    // --- Utilities ---
     private static Vector3 SnapXY(Vector3 original, Vector3 source)
     {
         return new Vector3(source.x, source.y, original.z);
     }
-
-    /*
-    * Utility: 2D distance
-    *
-    */
     private static float Dist2D(Vector3 a, Vector3 b)
     {
         float dx = a.x - b.x;
         float dy = a.y - b.y;
         return Mathf.Sqrt(dx * dx + dy * dy);
     }
-
-    /*
-    * Utility: normalized vector in XY (optionally zeroing Z)
-    *
-    */
     private Vector3 SafeDirPlanar(Vector3 v)
     {
         if (planar_2d) v.z = 0f;
@@ -530,11 +504,32 @@ public sealed class IkDualEndEffectorSolver : MonoBehaviour
         return Vector3.right;
     }
 
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    private static float SumSq(Vector3[] a, Vector3[] b, int n)
+    {
+        float s = 0f;
+        for (int i = 0; i < n; i++)
+        {
+            float dx = a[i].x - b[i].x;
+            float dy = a[i].y - b[i].y;
+            s += dx * dx + dy * dy; // XY only
+        }
+        return s;
+    }
+
+    private void MixWithPrevious(Vector3[] cur, Vector3[] prev, int n, float w)
+    {
+        if (w <= 0f || prev == null) return;
+        float u = 1f - w;
+        for (int i = 0; i < n; i++)
+        {
+            cur[i].x = u * prev[i].x + w * cur[i].x;
+            cur[i].y = u * prev[i].y + w * cur[i].y;
+            // keep Z
+        }
+    }
+
 #if UNITY_EDITOR
-    /*
-    * Debug gizmos
-    *
-    */
     void OnDrawGizmosSelected()
     {
         if (!debug_draw || ik_builder == null) return;
