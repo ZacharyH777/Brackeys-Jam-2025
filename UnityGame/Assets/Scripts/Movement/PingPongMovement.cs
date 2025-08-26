@@ -1,34 +1,40 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+/*
+ * 2D ping-pong movement with local circular clamp and floor.
+ * Uses Input System callbacks (Vector2 Move).
+ */
 [RequireComponent(typeof(Rigidbody2D))]
 public class PingPongMovement : MonoBehaviour
 {
     [Header("Movement")]
-    public float maxSpeed = 12f;
+    [Tooltip("Max speed.")]
+    public float max_speed = 12f;
+    [Tooltip("Accel.")]
     public float acceleration = 60f;
+    [Tooltip("Decel.")]
     public float deceleration = 30f;
 
-    [Header("Bounds (local space)")]
-    [Tooltip("Squared radius in LOCAL space")]
-    public float clampRadiusSq = 3.4f;
-    [Tooltip("Minimum LOCAL Y value allowed.")]
-    public float minLocalY = 0.4f;
+    [Header("Bounds (local)")]
+    [Tooltip("Radius^2 in local.")]
+    public float clamp_radius_sq = 3.4f;
+    [Tooltip("Min local Y.")]
+    public float min_local_y = 0.4f;
 
-    [Header("Input (Unity Input System)")]
-    [Tooltip("Optional: drag your 'Move' action here (Value/Vector2). If left empty, we'll try PlayerInput+actionName.")]
-    public InputActionReference moveAction;
-
-    [Tooltip("If Move Action is not set, we'll search this action on a PlayerInput on the same GameObject.")]
-    public string moveActionName = "Move";
-
-    [Tooltip("Try to auto-bind from PlayerInput if Move Action is not set.")]
-    public bool fetchFromPlayerInputIfNull = true;
+    [Header("Input")]
+    [Tooltip("Drag Move (Vector2).")]
+    public InputActionReference move_action_ref;
+    [Tooltip("Fallback name on PlayerInput.")]
+    public string move_action_name = "Move";
+    [Tooltip("Auto-bind from PlayerInput.")]
+    public bool fetch_from_player_input_if_null = true;
 
     private Rigidbody2D rb;
-    private InputAction _moveAction;
-    private Vector2 _move; // cached input from callbacks
+    private InputAction move_action;
+    private Vector2 move_input;
 
+    /* Unity */
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -45,76 +51,99 @@ public class PingPongMovement : MonoBehaviour
         rb.constraints = RigidbodyConstraints2D.FreezeRotation;
     }
 
+    /* Unity */
     void OnEnable()
     {
-        BindInput();
+        bind_input();
     }
 
+    /* Unity */
     void OnDisable()
     {
-        UnbindInput();
+        unbind_input();
     }
 
-    private void BindInput()
+    /* Input */
+    private void bind_input()
     {
-        // Prefer explicit InputActionReference
-        if (moveAction != null && moveAction.action != null)
+        if (move_action_ref != null)
         {
-            _moveAction = moveAction.action;
-        }
-        // Fallback: find action on PlayerInput by name
-        else if (fetchFromPlayerInputIfNull)
-        {
-            var pi = GetComponent<PlayerInput>();
-            if (pi != null && !string.IsNullOrEmpty(moveActionName))
+            if (move_action_ref.action != null)
             {
-                try
-                {
-                    _moveAction = pi.actions?.FindAction(moveActionName, throwIfNotFound: true);
-                }
-                catch { _moveAction = null; }
+                move_action = move_action_ref.action;
             }
         }
 
-        if (_moveAction != null)
+        if (move_action == null)
         {
-            _moveAction.performed += OnMovePerformed;
-            _moveAction.canceled  += OnMoveCanceled;
-            if (!_moveAction.enabled) _moveAction.Enable();
+            if (fetch_from_player_input_if_null)
+            {
+                var player_input = GetComponent<PlayerInput>();
+                if (player_input != null)
+                {
+                    var asset = player_input.actions;
+                    if (asset != null)
+                    {
+                        try
+                        {
+                            move_action = asset.FindAction(move_action_name, true);
+                        }
+                        catch
+                        {
+                            move_action = null;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (move_action != null)
+        {
+            move_action.performed += on_move_performed;
+            move_action.canceled += on_move_canceled;
+            if (!move_action.enabled)
+            {
+                move_action.Enable();
+            }
         }
         else
         {
-            Debug.LogWarning($"[{nameof(PingPongMovement)}] No Move action bound. Assign an InputActionReference or add PlayerInput with an action named '{moveActionName}'.");
+            Debug.LogWarning("[PingPongMovement] Move action not bound.");
         }
     }
 
-    private void UnbindInput()
+    /* Input */
+    private void unbind_input()
     {
-        if (_moveAction != null)
+        if (move_action != null)
         {
-            _moveAction.performed -= OnMovePerformed;
-            _moveAction.canceled  -= OnMoveCanceled;
-            // Do not Disable() here if another component shares the same action.
-            _moveAction = null;
+            move_action.performed -= on_move_performed;
+            move_action.canceled -= on_move_canceled;
+            move_action = null;
         }
-        _move = Vector2.zero;
+        move_input = Vector2.zero;
     }
 
-    private void OnMovePerformed(InputAction.CallbackContext ctx)
+    /* Input */
+    private void on_move_performed(InputAction.CallbackContext ctx)
     {
-        _move = ctx.ReadValue<Vector2>();
+        move_input = ctx.ReadValue<Vector2>();
     }
 
-    private void OnMoveCanceled(InputAction.CallbackContext ctx)
+    /* Input */
+    private void on_move_canceled(InputAction.CallbackContext ctx)
     {
-        _move = Vector2.zero;
+        move_input = Vector2.zero;
     }
 
+    /* Unity */
     void FixedUpdate()
     {
-        // Normalize if needed (e.g., WASD 2D composite might exceed 1)
-        Vector2 input = _move;
-        if (input.sqrMagnitude > 1f) input.Normalize();
+        Vector2 input = move_input;
+        if (input.sqrMagnitude > 1f)
+        {
+            input = input.normalized;
+        }
 
         float dt = Time.fixedDeltaTime;
 
@@ -126,14 +155,19 @@ public class PingPongMovement : MonoBehaviour
 
         if (input.sqrMagnitude > 1e-6f)
         {
-            Vector2 target = input * maxSpeed;
-            Vector2 deltaV = target - v;
+            Vector2 target = input * max_speed;
+            Vector2 delta_v = target - v;
 
-            float maxStep = acceleration * dt;
-            float mag = deltaV.magnitude;
-            if (mag > maxStep) deltaV *= maxStep / Mathf.Max(mag, 1e-6f);
+            float max_step = acceleration * dt;
+            float mag = delta_v.magnitude;
+            if (mag > max_step)
+            {
+                float denom = mag;
+                if (denom < 1e-6f) denom = 1e-6f;
+                delta_v = delta_v * (max_step / denom);
+            }
 
-            rb.AddForce(rb.mass * deltaV, ForceMode2D.Impulse);
+            rb.AddForce(rb.mass * delta_v, ForceMode2D.Impulse);
         }
         else
         {
@@ -141,11 +175,14 @@ public class PingPongMovement : MonoBehaviour
             if (speed > 0f)
             {
                 float drop = deceleration * dt;
-                float newSpeed = Mathf.Max(speed - drop, 0f);
-                if (!Mathf.Approximately(newSpeed, speed))
+                float new_speed = speed - drop;
+                if (new_speed < 0f) new_speed = 0f;
+                if (!Mathf.Approximately(new_speed, speed))
                 {
-                    Vector2 deltaV = (newSpeed - speed) * (v / Mathf.Max(speed, 1e-6f));
-                    rb.AddForce(rb.mass * deltaV, ForceMode2D.Impulse);
+                    float denom = speed;
+                    if (denom < 1e-6f) denom = 1e-6f;
+                    Vector2 delta_v = (new_speed - speed) * (v / denom);
+                    rb.AddForce(rb.mass * delta_v, ForceMode2D.Impulse);
                 }
             }
         }
@@ -156,43 +193,62 @@ public class PingPongMovement : MonoBehaviour
         Vector2 capped = rb.velocity;
 #endif
         float s = capped.magnitude;
-        if (s > maxSpeed) capped *= maxSpeed / s;
+        if (s > max_speed)
+        {
+            capped = capped * (max_speed / s);
+        }
 
         Transform origin = transform.parent;
-        Vector2 pWorld = rb.position;
-        Vector2 pLocal = origin ? (Vector2)origin.InverseTransformPoint(pWorld) : pWorld;
+        Vector2 p_world = rb.position;
+        Vector2 p_local;
+
+        if (origin != null)
+        {
+            p_local = origin.InverseTransformPoint(p_world);
+        }
+        else
+        {
+            p_local = p_world;
+        }
 
         bool changed = false;
-        Vector2 clampedLocal = pLocal;
+        Vector2 clamped_local = p_local;
 
-        float r2 = Mathf.Max(0f, clampRadiusSq);
-        float r = r2 > 0f ? Mathf.Sqrt(r2) : 0f;
+        float r2 = clamp_radius_sq;
+        if (r2 < 0f) r2 = 0f;
+        float r = 0f;
+        if (r2 > 0f) r = Mathf.Sqrt(r2);
 
-        if (clampedLocal.y < minLocalY)
+        if (clamped_local.y < min_local_y)
         {
-            clampedLocal.y = minLocalY;
+            clamped_local.y = min_local_y;
             changed = true;
         }
 
         if (r2 > 0f)
         {
-            float d2 = clampedLocal.sqrMagnitude;
+            float d2 = clamped_local.sqrMagnitude;
             if (d2 > r2)
             {
-                if (clampedLocal.y <= minLocalY + 1e-6f)
+                if (clamped_local.y <= min_local_y + 1e-6f)
                 {
-                    float xMax = Mathf.Sqrt(Mathf.Max(0f, r2 - minLocalY * minLocalY));
-                    clampedLocal.x = Mathf.Clamp(clampedLocal.x, -xMax, xMax);
-                    clampedLocal.y = minLocalY;
+                    float x_max = Mathf.Sqrt(Mathf.Max(0f, r2 - min_local_y * min_local_y));
+                    if (clamped_local.x < -x_max) clamped_local.x = -x_max;
+                    if (clamped_local.x > x_max) clamped_local.x = x_max;
+                    clamped_local.y = min_local_y;
                 }
                 else
                 {
-                    clampedLocal = clampedLocal.normalized * r;
-                    if (clampedLocal.y < minLocalY)
+                    if (clamped_local.sqrMagnitude > 1e-12f)
                     {
-                        float xMax = Mathf.Sqrt(Mathf.Max(0f, r2 - minLocalY * minLocalY));
-                            clampedLocal.x = Mathf.Clamp(clampedLocal.x, -xMax, xMax);
-                            clampedLocal.y = minLocalY;
+                        clamped_local = clamped_local.normalized * r;
+                    }
+                    if (clamped_local.y < min_local_y)
+                    {
+                        float x_max = Mathf.Sqrt(Mathf.Max(0f, r2 - min_local_y * min_local_y));
+                        if (clamped_local.x < -x_max) clamped_local.x = -x_max;
+                        if (clamped_local.x > x_max) clamped_local.x = x_max;
+                        clamped_local.y = min_local_y;
                     }
                 }
                 changed = true;
@@ -201,24 +257,63 @@ public class PingPongMovement : MonoBehaviour
 
         if (changed)
         {
-            Vector2 clampedWorld = origin ? (Vector2)origin.TransformPoint(clampedLocal) : clampedLocal;
-            rb.position = clampedWorld;
-
-            Vector2 vWorld = capped;
-            Vector2 vLocal = origin ? (Vector2)origin.InverseTransformVector(vWorld) : vWorld;
-
-            bool onCircle = r2 > 0f && Mathf.Abs(clampedLocal.sqrMagnitude - r2) <= 1e-4f;
-            if (onCircle && clampedLocal.sqrMagnitude > 1e-12f)
+            Vector2 clamped_world;
+            if (origin != null)
             {
-                Vector2 nLocal = clampedLocal.normalized;
-                float radial = Vector2.Dot(vLocal, nLocal);
-                if (radial > 0f) vLocal -= radial * nLocal; 
+                clamped_world = origin.TransformPoint(clamped_local);
+            }
+            else
+            {
+                clamped_world = clamped_local;
             }
 
-            if (clampedLocal.y <= minLocalY + 1e-6f && vLocal.y < 0f)
-                vLocal.y = 0f;
+            rb.position = clamped_world;
 
-            capped = origin ? (Vector2)origin.TransformVector(vLocal) : vLocal;
+            Vector2 v_world = capped;
+            Vector2 v_local;
+
+            if (origin != null)
+            {
+                v_local = origin.InverseTransformVector(v_world);
+            }
+            else
+            {
+                v_local = v_world;
+            }
+
+            bool on_circle = false;
+            float diff = clamped_local.sqrMagnitude - r2;
+            if (r2 > 0f)
+            {
+                if (Mathf.Abs(diff) <= 1e-4f) on_circle = true;
+            }
+
+            if (on_circle)
+            {
+                if (clamped_local.sqrMagnitude > 1e-12f)
+                {
+                    Vector2 n_local = clamped_local.normalized;
+                    float radial = Vector2.Dot(v_local, n_local);
+                    if (radial > 0f)
+                    {
+                        v_local = v_local - radial * n_local;
+                    }
+                }
+            }
+
+            if (clamped_local.y <= min_local_y + 1e-6f)
+            {
+                if (v_local.y < 0f) v_local.y = 0f;
+            }
+
+            if (origin != null)
+            {
+                capped = origin.TransformVector(v_local);
+            }
+            else
+            {
+                capped = v_local;
+            }
         }
 
 #if UNITY_6000_0_OR_NEWER

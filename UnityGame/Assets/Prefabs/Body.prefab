@@ -285,6 +285,7 @@ GameObject:
   - component: {fileID: 1922753509929116815}
   - component: {fileID: 8611034551573413222}
   - component: {fileID: 5086624280022877204}
+  - component: {fileID: 3937193156234943451}
   m_Layer: 0
   m_Name: Body
   m_TagString: Untagged
@@ -399,12 +400,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e69e3c77b1a1aef418dbc6a0322b6c31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement2D
-  maxSpeed: 12
-  acceleration: 60
+  max_speed: 10
+  acceleration: 40
   deceleration: 80
-  moveAction: {fileID: -1680190386980627800, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
-  moveActionName: Move
-  fetchFromPlayerInputIfNull: 1
+  move_action_ref: {fileID: -1680190386980627800, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  move_action_name: Move
+  fetch_from_player_input_if_null: 1
 --- !u!70 &5086624280022877204
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -442,6 +443,36 @@ CapsuleCollider2D:
   m_Offset: {x: 0.13, y: -0.15}
   m_Size: {x: 1.69, y: 1}
   m_Direction: 1
+--- !u!114 &3937193156234943451
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2861792367151787122}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.PlayerInput
+  m_Actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  m_NotificationBehavior: 0
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents: []
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: 
+  m_DefaultActionMap: Player
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
 --- !u!1 &3492262037383110904
 GameObject:
   m_ObjectHideFlags: 0
@@ -622,14 +653,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c513a025117b07647a3132b740118844, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PingPongMovement
-  maxSpeed: 31.5
+  max_speed: 22
   acceleration: 78.7
   deceleration: 99.8
-  clampRadiusSq: 5.6
-  minLocalY: 0.4
-  moveAction: {fileID: -5630151704836100654, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
-  moveActionName: PingPongMove
-  fetchFromPlayerInputIfNull: 1
+  clamp_radius_sq: 5.8
+  min_local_y: 0.4
+  move_action_ref: {fileID: -5630151704836100654, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  move_action_name: Move
+  fetch_from_player_input_if_null: 1
 --- !u!1 &5310952536269038088
 GameObject:
   m_ObjectHideFlags: 0
