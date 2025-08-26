@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 3743ba7f9021ead44ab543a48fc80b26
+guid: 5830766a1d5d26642aa109edaff448c5
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -4825193926966967362
-    second: spunkyupperarm_0
+      213: 7280924123097093200
+    second: spunkyelbow_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -51,7 +51,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 80
+  spritePixelsToUnits: 100
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -139,13 +139,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: spunkyupperarm_0
+      name: spunkyelbow_0
       rect:
         serializedVersion: 2
-        x: 100
-        y: 107
-        width: 60
-        height: 42
+        x: 116
+        y: 112
+        width: 27
+        height: 27
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -154,8 +154,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: eb303ca30b7790db0800000000000000
-      internalID: -4825193926966967362
+      spriteID: 05456c9f9e90b0560800000000000000
+      internalID: 7280924123097093200
       vertices: []
       indices: 
       edges: []
@@ -174,7 +174,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      spunkyupperarm_0: -4825193926966967362
+      spunkyelbow_0: 7280924123097093200
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

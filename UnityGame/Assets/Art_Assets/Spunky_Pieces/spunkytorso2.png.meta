@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 3743ba7f9021ead44ab543a48fc80b26
+guid: 89d1a62e61669af4bbbf16183f30f2c3
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -4825193926966967362
-    second: spunkyupperarm_0
+      213: -6782540170539461665
+    second: spunkytorso2_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -139,13 +139,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: spunkyupperarm_0
+      name: spunkytorso2_0
       rect:
         serializedVersion: 2
-        x: 100
-        y: 107
-        width: 60
-        height: 42
+        x: 66
+        y: 96
+        width: 127
+        height: 60
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -154,8 +154,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: eb303ca30b7790db0800000000000000
-      internalID: -4825193926966967362
+      spriteID: fd39d2c76a39fd1a0800000000000000
+      internalID: -6782540170539461665
       vertices: []
       indices: 
       edges: []
@@ -174,7 +174,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      spunkyupperarm_0: -4825193926966967362
+      spunkytorso2_0: -6782540170539461665
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
