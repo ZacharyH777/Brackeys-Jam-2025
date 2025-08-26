@@ -10,12 +10,24 @@ public class PingPongMovement : MonoBehaviour
     public float deceleration = 30f;
 
     [Header("Bounds (local space)")]
-    [Tooltip("Squared radius in LOCAL space (e.g., 3.4 means radius = sqrt(3.4)).")]
+    [Tooltip("Squared radius in LOCAL space")]
     public float clampRadiusSq = 3.4f;
     [Tooltip("Minimum LOCAL Y value allowed.")]
     public float minLocalY = 0.4f;
 
+    [Header("Input (Unity Input System)")]
+    [Tooltip("Optional: drag your 'Move' action here (Value/Vector2). If left empty, we'll try PlayerInput+actionName.")]
+    public InputActionReference moveAction;
+
+    [Tooltip("If Move Action is not set, we'll search this action on a PlayerInput on the same GameObject.")]
+    public string moveActionName = "Move";
+
+    [Tooltip("Try to auto-bind from PlayerInput if Move Action is not set.")]
+    public bool fetchFromPlayerInputIfNull = true;
+
     private Rigidbody2D rb;
+    private InputAction _moveAction;
+    private Vector2 _move; // cached input from callbacks
 
     void Awake()
     {
@@ -33,17 +45,75 @@ public class PingPongMovement : MonoBehaviour
         rb.constraints = RigidbodyConstraints2D.FreezeRotation;
     }
 
+    void OnEnable()
+    {
+        BindInput();
+    }
+
+    void OnDisable()
+    {
+        UnbindInput();
+    }
+
+    private void BindInput()
+    {
+        // Prefer explicit InputActionReference
+        if (moveAction != null && moveAction.action != null)
+        {
+            _moveAction = moveAction.action;
+        }
+        // Fallback: find action on PlayerInput by name
+        else if (fetchFromPlayerInputIfNull)
+        {
+            var pi = GetComponent<PlayerInput>();
+            if (pi != null && !string.IsNullOrEmpty(moveActionName))
+            {
+                try
+                {
+                    _moveAction = pi.actions?.FindAction(moveActionName, throwIfNotFound: true);
+                }
+                catch { _moveAction = null; }
+            }
+        }
+
+        if (_moveAction != null)
+        {
+            _moveAction.performed += OnMovePerformed;
+            _moveAction.canceled  += OnMoveCanceled;
+            if (!_moveAction.enabled) _moveAction.Enable();
+        }
+        else
+        {
+            Debug.LogWarning($"[{nameof(PingPongMovement)}] No Move action bound. Assign an InputActionReference or add PlayerInput with an action named '{moveActionName}'.");
+        }
+    }
+
+    private void UnbindInput()
+    {
+        if (_moveAction != null)
+        {
+            _moveAction.performed -= OnMovePerformed;
+            _moveAction.canceled  -= OnMoveCanceled;
+            // Do not Disable() here if another component shares the same action.
+            _moveAction = null;
+        }
+        _move = Vector2.zero;
+    }
+
+    private void OnMovePerformed(InputAction.CallbackContext ctx)
+    {
+        _move = ctx.ReadValue<Vector2>();
+    }
+
+    private void OnMoveCanceled(InputAction.CallbackContext ctx)
+    {
+        _move = Vector2.zero;
+    }
+
     void FixedUpdate()
     {
-        var kb = Keyboard.current;
-        Vector2 input = Vector2.zero;
-        if (kb != null)
-        {
-            if (kb.upArrowKey.isPressed)    input.y += 1f;
-            if (kb.downArrowKey.isPressed)  input.y -= 1f;
-            if (kb.leftArrowKey.isPressed)  input.x -= 1f;
-            if (kb.rightArrowKey.isPressed) input.x += 1f;
-        }
+        // Normalize if needed (e.g., WASD 2D composite might exceed 1)
+        Vector2 input = _move;
         if (input.sqrMagnitude > 1f) input.Normalize();
 
         float dt = Time.fixedDeltaTime;
@@ -121,8 +191,8 @@ public class PingPongMovement : MonoBehaviour
                     if (clampedLocal.y < minLocalY)
                     {
                         float xMax = Mathf.Sqrt(Mathf.Max(0f, r2 - minLocalY * minLocalY));
-                        clampedLocal.x = Mathf.Clamp(clampedLocal.x, -xMax, xMax);
-                        clampedLocal.y = minLocalY;
+                            clampedLocal.x = Mathf.Clamp(clampedLocal.x, -xMax, xMax);
+                            clampedLocal.y = minLocalY;
                     }
                 }
                 changed = true;

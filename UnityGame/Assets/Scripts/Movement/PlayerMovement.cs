@@ -4,11 +4,24 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerMovement2D : MonoBehaviour
 {
+    [Header("Movement")]
     public float maxSpeed = 12f;
     public float acceleration = 60f;
     public float deceleration = 80f;
 
-    Rigidbody2D rb;
+    [Header("Input (Unity 6.2 Input System)")]
+    [Tooltip("Optional: drag a Value/Vector2 action here (e.g., 'Move').")]
+    public InputActionReference moveAction;
+
+    [Tooltip("If no InputActionReference is set, we'll look for this action on a PlayerInput on the same GameObject.")]
+    public string moveActionName = "Move";
+
+    [Tooltip("Try to auto-bind from PlayerInput if Move Action is null.")]
+    public bool fetchFromPlayerInputIfNull = true;
+
+    private Rigidbody2D rb;
+    private InputAction _moveAction;
+    private Vector2 _move;
 
     void Awake()
     {
@@ -20,17 +33,65 @@ public class PlayerMovement2D : MonoBehaviour
         rb.constraints = RigidbodyConstraints2D.FreezeRotation;
     }
 
+    void OnEnable()
+    {
+        BindInput();
+    }
+
+    void OnDisable()
+    {
+        UnbindInput();
+    }
+
+    private void BindInput()
+    {
+        if (moveAction != null && moveAction.action != null)
+        {
+            _moveAction = moveAction.action;
+        }
+
+        else if (fetchFromPlayerInputIfNull)
+        {
+            var pi = GetComponent<PlayerInput>();
+            if (pi != null && !string.IsNullOrEmpty(moveActionName))
+            {
+                try
+                {
+                    _moveAction = pi.actions?.FindAction(moveActionName, throwIfNotFound: true);
+                }
+                catch { _moveAction = null; }
+            }
+        }
+
+        if (_moveAction != null)
+        {
+            _moveAction.performed += OnMovePerformed;
+            _moveAction.canceled  += OnMoveCanceled;
+            if (!_moveAction.enabled) _moveAction.Enable();
+        }
+        else
+        {
+            Debug.LogWarning($"[{nameof(PlayerMovement2D)}] No Move action bound. Assign an InputActionReference or add PlayerInput with an action named '{moveActionName}'.");
+        }
+    }
+
+    private void UnbindInput()
+    {
+        if (_moveAction != null)
+        {
+            _moveAction.performed -= OnMovePerformed;
+            _moveAction.canceled  -= OnMoveCanceled;
+            _moveAction = null;
+        }
+        _move = Vector2.zero;
+    }
+
+    private void OnMovePerformed(InputAction.CallbackContext ctx) => _move = ctx.ReadValue<Vector2>();
+    private void OnMoveCanceled(InputAction.CallbackContext ctx)  => _move = Vector2.zero;
+
     void FixedUpdate()
     {
-        var kb = Keyboard.current;
-        Vector2 in2 = Vector2.zero;
-        if (kb != null)
-        {
-            if (kb.wKey.isPressed) in2.y += 1f;
-            if (kb.sKey.isPressed) in2.y -= 1f;
-            if (kb.aKey.isPressed) in2.x -= 1f;
-            if (kb.dKey.isPressed) in2.x += 1f;
-        }
+        Vector2 in2 = _move;
         if (in2.sqrMagnitude > 1f) in2.Normalize();
 
         float dt = Time.fixedDeltaTime;
@@ -38,12 +99,13 @@ public class PlayerMovement2D : MonoBehaviour
 
         if (in2.sqrMagnitude > 1e-6f)
         {
-            Vector2 target = in2.normalized * maxSpeed;
+            Vector2 target = in2 * maxSpeed;
             Vector2 deltaV = target - v;
-            float maxStep = acceleration * dt;
-            if (deltaV.magnitude > maxStep) deltaV = deltaV.normalized * maxStep;
 
-            // In 2D, use impulse = mass * deltaV
+            float maxStep = acceleration * dt;
+            float mag = deltaV.magnitude;
+            if (mag > maxStep) deltaV *= maxStep / Mathf.Max(mag, 1e-6f);
+
             rb.AddForce(rb.mass * deltaV, ForceMode2D.Impulse);
         }
         else
@@ -61,7 +123,6 @@ public class PlayerMovement2D : MonoBehaviour
             }
         }
 
-        // Hard cap
         var vp = rb.linearVelocity;
         if (vp.magnitude > maxSpeed) rb.linearVelocity = vp.normalized * maxSpeed;
     }
