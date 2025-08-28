@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody2D))]
-public class PingPongMovement : MonoBehaviour
+public class PingPongMove2 : MonoBehaviour
 {
     [Header("Owner Source")]
     [SerializeField] private PlayerInput owner;
@@ -16,25 +16,21 @@ public class PingPongMovement : MonoBehaviour
     public float clamp_radius_sq = 3.4f;
     public float min_local_y = 0.4f;
 
-    [Header("Input Map")]
+    [Header("Input Mapping")]
     public InputActionReference move_action_ref;
     public string move_action_name = "Move";
 
-    [Header("Reliability")]
-    [Tooltip("Poll value each fixed update.")]
+    [Header("Input Reliability")]
+    [Tooltip("Poll each fixed update")]
     public bool also_poll_each_fixed_update = true;
 
     [Header("Mirror")]
-    [Tooltip("Auto read negative axis from scale.")]
+    [Tooltip("Use negative scale to flip input and bounds.")]
     public bool auto_mirror_from_scale = true;
-    [Tooltip("Manual X when auto is off.")]
+    [Tooltip("Mirror X when auto is off.")]
     public bool mirror_x = false;
-    [Tooltip("Manual Y when auto is off.")]
+    [Tooltip("Mirror Y when auto is off.")]
     public bool mirror_y = false;
-    [Tooltip("Mirror input vector.")]
-    public bool mirror_inputs = true;
-    [Tooltip("Mirror bounds and floor.")]
-    public bool mirror_bounds = true;
 
     private Rigidbody2D rigidbody2d;
     private InputAction move_action;
@@ -42,8 +38,8 @@ public class PingPongMovement : MonoBehaviour
     private bool is_subscribed;
 
     /*
-    Set or change owner and rebind input.
-    @param player_input PlayerInput that provides the actions.
+    Set or change the owning PlayerInput and update bindings.
+    @param player_input The PlayerInput that provides the action asset for this mover.
     */
     public void SetOwner(PlayerInput player_input)
     {
@@ -70,7 +66,7 @@ public class PingPongMovement : MonoBehaviour
     }
 
     /*
-    Cache rigidbody and configure baseline physics.
+    Cache and configure the Rigidbody2D for controlled movement.
     */
     void Awake()
     {
@@ -90,17 +86,17 @@ public class PingPongMovement : MonoBehaviour
 
         if (rigidbody2d.bodyType != RigidbodyType2D.Dynamic)
         {
-            Debug.LogWarning("Rigidbody is not dynamic.");
+            Debug.LogWarning("Rigidbody type is not dynamic. AddForce will not move it.");
         }
 
         if (!rigidbody2d.simulated)
         {
-            Debug.LogWarning("Rigidbody is not simulated.");
+            Debug.LogWarning("Rigidbody is not simulated. Physics will not run.");
         }
     }
 
     /*
-    Subscribe and bind on enable.
+    Subscribe to owner changes and bind input when enabled.
     */
     void OnEnable()
     {
@@ -109,12 +105,11 @@ public class PingPongMovement : MonoBehaviour
             owner.onControlsChanged += OnControlsChanged;
             is_subscribed = true;
         }
-
         BindInput();
     }
 
     /*
-    Unsubscribe and unbind on disable.
+    Unsubscribe and unbind input when disabled.
     */
     void OnDisable()
     {
@@ -123,13 +118,12 @@ public class PingPongMovement : MonoBehaviour
             owner.onControlsChanged -= OnControlsChanged;
             is_subscribed = false;
         }
-
         UnbindInput();
     }
 
     /*
-    Rebind after control scheme or device changes.
-    @param player_input Source PlayerInput that changed.
+    Rebind input if the PlayerInput control scheme or devices change.
+    @param player_input The PlayerInput that triggered the change.
     */
     private void OnControlsChanged(PlayerInput player_input)
     {
@@ -137,7 +131,7 @@ public class PingPongMovement : MonoBehaviour
     }
 
     /*
-    Bind the move action from the owner asset.
+    Resolve the movement action from the owner action asset and subscribe to callbacks.
     */
     private void BindInput()
     {
@@ -174,17 +168,16 @@ public class PingPongMovement : MonoBehaviour
             move_action.performed += OnMovePerformed;
             move_action.canceled += OnMoveCanceled;
             move_action.Enable();
-
             move_input = move_action.ReadValue<Vector2>();
         }
         else
         {
-            Debug.LogWarning("Move action was not found.");
+            Debug.LogWarning("Move action not found in owner asset.");
         }
     }
 
     /*
-    Unsubscribe input callbacks and clear cached state.
+    Remove callbacks and clear state.
     */
     private void UnbindInput()
     {
@@ -199,8 +192,8 @@ public class PingPongMovement : MonoBehaviour
     }
 
     /*
-    Cache input vector when performed.
-    @param context Callback context from the action.
+    Update cached input when movement is performed.
+    @param context The callback context providing the input vector.
     */
     private void OnMovePerformed(InputAction.CallbackContext context)
     {
@@ -208,8 +201,8 @@ public class PingPongMovement : MonoBehaviour
     }
 
     /*
-    Clear input vector on cancel.
-    @param context Callback context from the action.
+    Clear cached input when movement is canceled.
+    @param context The callback context for the canceled event.
     */
     private void OnMoveCanceled(InputAction.CallbackContext context)
     {
@@ -217,8 +210,8 @@ public class PingPongMovement : MonoBehaviour
     }
 
     /*
-    Compute mirror vector from scale or manual toggles.
-    @return Vector with +1 or -1 per axis.
+    Compute the active mirror vector.
+    Returns (+1 or -1) per axis depending on settings or scale.
     */
     private Vector2 GetMirrorVector()
     {
@@ -232,7 +225,6 @@ public class PingPongMovement : MonoBehaviour
             {
                 m.x = -1f;
             }
-
             if (s.y < 0f)
             {
                 m.y = -1f;
@@ -244,7 +236,6 @@ public class PingPongMovement : MonoBehaviour
             {
                 m.x = -1f;
             }
-
             if (mirror_y)
             {
                 m.y = -1f;
@@ -255,10 +246,9 @@ public class PingPongMovement : MonoBehaviour
     }
 
     /*
-    Multiply by mirror vector.
-    @param v Input vector.
-    @param m Mirror vector.
-    @return Mirrored vector.
+    Multiply a vector by the mirror vector.
+    @param v Vector to mirror.
+    @param m Mirror vector with components +1 or -1.
     */
     private static Vector2 ApplyMirror(Vector2 v, Vector2 m)
     {
@@ -269,7 +259,7 @@ public class PingPongMovement : MonoBehaviour
     }
 
     /*
-    Physics update with optional input mirroring and bounds mirroring.
+    Drive the Rigidbody2D using acceleration and deceleration while enforcing mirrored local bounds.
     */
     void FixedUpdate()
     {
@@ -293,10 +283,8 @@ public class PingPongMovement : MonoBehaviour
             input_vector = input_vector.normalized;
         }
 
-        if (mirror_inputs)
-        {
-            input_vector = ApplyMirror(input_vector, mirror);
-        }
+        /* Mirror input to match facing */
+        input_vector = ApplyMirror(input_vector, mirror);
 
         float delta_time = Time.fixedDeltaTime;
 
@@ -316,13 +304,11 @@ public class PingPongMovement : MonoBehaviour
             if (delta_magnitude > max_step)
             {
                 float denom = delta_magnitude;
-
                 if (denom < 1e-6f)
                 {
                     denom = 1e-6f;
                 }
-
-                delta_velocity *= max_step / denom;
+                delta_velocity *= (max_step / denom);
             }
 
             rigidbody2d.AddForce(rigidbody2d.mass * delta_velocity, ForceMode2D.Impulse);
@@ -330,15 +316,12 @@ public class PingPongMovement : MonoBehaviour
         else
         {
             float speed = velocity.magnitude;
-
             if (speed > 0f)
             {
                 float new_speed = Mathf.Max(0f, speed - deceleration * delta_time);
-
                 if (!Mathf.Approximately(new_speed, speed))
                 {
                     Vector2 normalized_velocity;
-
                     if (speed < 1e-6f)
                     {
                         normalized_velocity = velocity / 1e-6f;
@@ -364,13 +347,11 @@ public class PingPongMovement : MonoBehaviour
         if (speed_magnitude > max_speed)
         {
             float denom_speed = speed_magnitude;
-
             if (denom_speed < 1e-6f)
             {
                 denom_speed = 1e-6f;
             }
-
-            capped_velocity *= max_speed / denom_speed;
+            capped_velocity *= (max_speed / denom_speed);
         }
 
         Transform origin_transform = transform.parent;
@@ -386,15 +367,11 @@ public class PingPongMovement : MonoBehaviour
             position_local = position_world;
         }
 
-        Vector2 clamp_space_pos = position_local;
-
-        if (mirror_bounds)
-        {
-            clamp_space_pos = ApplyMirror(position_local, mirror);
-        }
+        /* Work in mirrored-local space so floor/circle rules stay identical */
+        Vector2 pos_local_m = ApplyMirror(position_local, mirror);
 
         bool position_changed = false;
-        Vector2 clamped_clamp_space_pos = clamp_space_pos;
+        Vector2 clamped_local_m = pos_local_m;
 
         float radius_squared = Mathf.Max(0f, clamp_radius_sq);
         float radius;
@@ -408,36 +385,35 @@ public class PingPongMovement : MonoBehaviour
             radius = 0f;
         }
 
-        if (clamped_clamp_space_pos.y < min_local_y)
+        if (clamped_local_m.y < min_local_y)
         {
-            clamped_clamp_space_pos.y = min_local_y;
+            clamped_local_m.y = min_local_y;
             position_changed = true;
         }
 
         if (radius_squared > 0f)
         {
-            float distance_squared = clamped_clamp_space_pos.sqrMagnitude;
-
+            float distance_squared = clamped_local_m.sqrMagnitude;
             if (distance_squared > radius_squared)
             {
-                if (clamped_clamp_space_pos.y <= min_local_y + 1e-6f)
+                if (clamped_local_m.y <= min_local_y + 1e-6f)
                 {
                     float x_limit = Mathf.Sqrt(Mathf.Max(0f, radius_squared - min_local_y * min_local_y));
-                    clamped_clamp_space_pos.x = Mathf.Clamp(clamped_clamp_space_pos.x, -x_limit, x_limit);
-                    clamped_clamp_space_pos.y = min_local_y;
+                    clamped_local_m.x = Mathf.Clamp(clamped_local_m.x, -x_limit, x_limit);
+                    clamped_local_m.y = min_local_y;
                 }
                 else
                 {
-                    if (clamped_clamp_space_pos.sqrMagnitude > 1e-12f)
+                    if (clamped_local_m.sqrMagnitude > 1e-12f)
                     {
-                        clamped_clamp_space_pos = clamped_clamp_space_pos.normalized * radius;
+                        clamped_local_m = clamped_local_m.normalized * radius;
                     }
 
-                    if (clamped_clamp_space_pos.y < min_local_y)
+                    if (clamped_local_m.y < min_local_y)
                     {
                         float x_limit = Mathf.Sqrt(Mathf.Max(0f, radius_squared - min_local_y * min_local_y));
-                        clamped_clamp_space_pos.x = Mathf.Clamp(clamped_clamp_space_pos.x, -x_limit, x_limit);
-                        clamped_clamp_space_pos.y = min_local_y;
+                        clamped_local_m.x = Mathf.Clamp(clamped_local_m.x, -x_limit, x_limit);
+                        clamped_local_m.y = min_local_y;
                     }
                 }
 
@@ -447,19 +423,9 @@ public class PingPongMovement : MonoBehaviour
 
         if (position_changed)
         {
-            Vector2 clamped_local;
-
-            if (mirror_bounds)
-            {
-                clamped_local = ApplyMirror(clamped_clamp_space_pos, mirror);
-            }
-            else
-            {
-                clamped_local = clamped_clamp_space_pos;
-            }
+            Vector2 clamped_local = ApplyMirror(clamped_local_m, mirror);
 
             Vector2 clamped_world_position;
-
             if (origin_transform != null)
             {
                 clamped_world_position = origin_transform.TransformPoint(clamped_local);
@@ -483,39 +449,25 @@ public class PingPongMovement : MonoBehaviour
                 velocity_local = velocity_world;
             }
 
-            Vector2 clamp_space_vel = velocity_local;
+            Vector2 vel_local_m = ApplyMirror(velocity_local, mirror);
 
-            if (mirror_bounds)
+            bool on_circle = radius_squared > 0f && Mathf.Abs(clamped_local_m.sqrMagnitude - radius_squared) <= 1e-4f;
+            if (on_circle && clamped_local_m.sqrMagnitude > 1e-12f)
             {
-                clamp_space_vel = ApplyMirror(velocity_local, mirror);
-            }
-
-            bool on_circle = radius_squared > 0f && Mathf.Abs(clamped_clamp_space_pos.sqrMagnitude - radius_squared) <= 1e-4f;
-
-            if (on_circle && clamped_clamp_space_pos.sqrMagnitude > 1e-12f)
-            {
-                Vector2 normal_local = clamped_clamp_space_pos.normalized;
-                float radial = Vector2.Dot(clamp_space_vel, normal_local);
-
+                Vector2 normal_local_m = clamped_local_m.normalized;
+                float radial = Vector2.Dot(vel_local_m, normal_local_m);
                 if (radial > 0f)
                 {
-                    clamp_space_vel -= radial * normal_local;
+                    vel_local_m -= radial * normal_local_m;
                 }
             }
 
-            if (clamped_clamp_space_pos.y <= min_local_y + 1e-6f && clamp_space_vel.y < 0f)
+            if (clamped_local_m.y <= min_local_y + 1e-6f && vel_local_m.y < 0f)
             {
-                clamp_space_vel.y = 0f;
+                vel_local_m.y = 0f;
             }
 
-            if (mirror_bounds)
-            {
-                velocity_local = ApplyMirror(clamp_space_vel, mirror);
-            }
-            else
-            {
-                velocity_local = clamp_space_vel;
-            }
+            velocity_local = ApplyMirror(vel_local_m, mirror);
 
             if (origin_transform != null)
             {
@@ -527,17 +479,14 @@ public class PingPongMovement : MonoBehaviour
             }
 
             float speed_post = capped_velocity.magnitude;
-
             if (speed_post > max_speed)
             {
                 float denom_post = speed_post;
-
                 if (denom_post < 1e-6f)
                 {
                     denom_post = 1e-6f;
                 }
-
-                capped_velocity *= max_speed / denom_post;
+                capped_velocity *= (max_speed / denom_post);
             }
         }
 

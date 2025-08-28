@@ -5,7 +5,7 @@ public class rotation_target : MonoBehaviour
 {
     public Transform target; 
     public Transform torso;
-    [Tooltip("If your sprite's 'forward' isn't +Z/UP isn't toward torso, add an extra Z-rotation (deg).")]
+    [Tooltip("If your sprite's forward isn't +Z/UP isn't toward torso, add an extra Z-rotation (in degrees).")]
     public float angleOffsetDeg = 0f;
 
     void LateUpdate()
