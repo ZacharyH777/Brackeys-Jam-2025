@@ -186,7 +186,7 @@ public class PlayerMovement : MonoBehaviour
 
         if (input_vector.sqrMagnitude > 1f)
         {
-            input_vector = input_vector.normalized;
+            input_vector.Normalize();
         }
 
         float delta_time = Time.fixedDeltaTime;
@@ -218,16 +218,7 @@ public class PlayerMovement : MonoBehaviour
                 float new_speed = Mathf.Max(0f, speed - deceleration * delta_time);
                 if (!Mathf.Approximately(new_speed, speed))
                 {
-                    Vector2 normalized_velocity;
-                    if (speed < 1e-6f)
-                    {
-                        normalized_velocity = velocity_after_accel / 1e-6f;
-                    }
-                    else
-                    {
-                        normalized_velocity = velocity_after_accel / speed;
-                    }
-
+                    Vector2 normalized_velocity = (speed < 1e-6f) ? (velocity_after_accel / 1e-6f) : (velocity_after_accel / speed);
                     Vector2 delta_velocity = (new_speed - speed) * normalized_velocity;
                     rigidbody2d.AddForce(rigidbody2d.mass * delta_velocity, ForceMode2D.Impulse);
                 }
@@ -243,12 +234,7 @@ public class PlayerMovement : MonoBehaviour
 
         if (speed_magnitude > max_speed)
         {
-            float denom_speed = speed_magnitude;
-            if (denom_speed < 1e-6f)
-            {
-                denom_speed = 1e-6f;
-            }
-            capped_velocity *= (max_speed / denom_speed);
+            capped_velocity *= (max_speed / speed_magnitude);
 #if UNITY_6000_0_OR_NEWER
             rigidbody2d.linearVelocity = capped_velocity;
 #else
@@ -274,12 +260,7 @@ public class PlayerMovement : MonoBehaviour
 
             if (delta_magnitude > max_step)
             {
-                float denom = delta_magnitude;
-                if (denom < 1e-6f)
-                {
-                    denom = 1e-6f;
-                }
-                delta_velocity *= (max_step / denom);
+                delta_velocity *= (max_step / delta_magnitude);
             }
 
             rigidbody2d.AddForce(rigidbody2d.mass * delta_velocity, ForceMode2D.Impulse);
