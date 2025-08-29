@@ -35,19 +35,6 @@ public class FindParent : MonoBehaviour
             // Try children as a fallback so the effect still works when the light is nested
             light_2d = GetComponentInChildren<Light2D>(true);
         }
-
-        if (player_input == null)
-        {
-            Debug.LogWarning("Player input not found on this object.");
-        }
-        if (sprite_renderer == null)
-        {
-            Debug.LogWarning("Sprite renderer not found on this object.");
-        }
-        if (light_2d == null)
-        {
-            Debug.LogWarning("Light 2D not found on this object or its children.");
-        }
     }
 
     /*
@@ -81,27 +68,21 @@ public class FindParent : MonoBehaviour
     */
     private void TryApplyColor()
     {
-        if (player_input == null)
-        {
-            return;
-        }
+        if (player_input == null) return;
 
         int player_index = player_input.playerIndex;
         if (player_index == 0)
         {
             SetTint(index_zero_color);
         }
+        else if (player_index == 1)
+        {
+            SetTint(index_one_color);
+        }
         else
         {
-            if (player_index == 1)
-            {
-                SetTint(index_one_color);
-            }
-            else
-            {
-                // Unknown player index. Leave default color
-                return;
-            }
+            // Unknown player index. Leave default color
+            return;
         }
 
         is_colored = true;
