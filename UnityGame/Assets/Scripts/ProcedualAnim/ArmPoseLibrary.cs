@@ -28,6 +28,14 @@ public sealed class ArmPoseLibrary : ScriptableObject
         [Tooltip("Local Z degrees of hand")]
         public float hand_z;
 
+        [Header("Collider")]
+        [Tooltip("Capsule offset local")]
+        public Vector2 collider_offset;
+        [Tooltip("Capsule size local")]
+        public Vector2 collider_size;
+        [Tooltip("Capsule axis direction")]
+        public CapsuleDirection2D collider_direction;
+
         [Header("Match")]
         [Tooltip("Degrees used for nearest match per joint")]
         public float per_joint_tolerance;

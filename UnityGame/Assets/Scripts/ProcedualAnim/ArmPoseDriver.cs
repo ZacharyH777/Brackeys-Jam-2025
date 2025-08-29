@@ -25,6 +25,10 @@ public sealed class ArmPoseDriver : MonoBehaviour
     [Tooltip("Transform of hand joint")]
     public Transform hand_joint;
 
+    [Header("Collider")]
+    [Tooltip("Capsule collider to drive")]
+    public CapsuleCollider2D collider_bounds;
+
     [Header("Library")]
     [Tooltip("Pose library asset")]
     public ArmPoseLibrary library;
@@ -55,6 +59,7 @@ public sealed class ArmPoseDriver : MonoBehaviour
     private float last_driver_deg = 0f;
     private bool last_driver_valid = false;
 
+    /* Unity */
     void Start()
     {
         if (apply_first_on_start)
@@ -102,9 +107,14 @@ public sealed class ArmPoseDriver : MonoBehaviour
             return;
         }
 
-        if (current_index < 0 || current_index >= count)
+        if (current_index < 0)
         {
             current_index = 0;
+            ApplyKeySprites(current_index);
+        }
+        if (current_index >= count)
+        {
+            current_index = count - 1;
             ApplyKeySprites(current_index);
         }
 
@@ -262,7 +272,7 @@ public sealed class ArmPoseDriver : MonoBehaviour
     }
 
     /* ApplyKeySprites
-     * Swap sprites to match a key index.
+     * Swap sprites and collider to match a key index.
      * @param index Key index to apply
      */
     public void ApplyKeySprites(int index)
@@ -291,11 +301,17 @@ public sealed class ArmPoseDriver : MonoBehaviour
         {
             hand_renderer.sprite = k.hand_sprite;
         }
+
+        if (collider_bounds != null)
+        {
+            collider_bounds.offset = k.collider_offset;
+            collider_bounds.size = k.collider_size;
+            collider_bounds.direction = k.collider_direction;
+        }
     }
 
     /* CaptureCurrentPose
-     * Read current sprites and joint angles and append a key to the library.
-     * Names are optional and can be set later.
+     * Read current sprites, joint angles, and collider and append a key.
      */
     [ContextMenu("Capture Current Pose")]
     public void CaptureCurrentPose()
@@ -314,18 +330,53 @@ public sealed class ArmPoseDriver : MonoBehaviour
         ArmPoseLibrary.ArmPoseKey key = new ArmPoseLibrary.ArmPoseKey();
         key.pose_name = "Pose " + library.keys.Count;
 
-        key.upper_arm_sprite = upper_arm_renderer != null ? upper_arm_renderer.sprite : null;
-        key.forearm_sprite = forearm_renderer != null ? forearm_renderer.sprite : null;
-        key.hand_sprite = hand_renderer != null ? hand_renderer.sprite : null;
+        if (upper_arm_renderer != null)
+        {
+            key.upper_arm_sprite = upper_arm_renderer.sprite;
+        }
+        else
+        {
+            key.upper_arm_sprite = null;
+        }
+
+        if (forearm_renderer != null)
+        {
+            key.forearm_sprite = forearm_renderer.sprite;
+        }
+        else
+        {
+            key.forearm_sprite = null;
+        }
+
+        if (hand_renderer != null)
+        {
+            key.hand_sprite = hand_renderer.sprite;
+        }
+        else
+        {
+            key.hand_sprite = null;
+        }
 
         key.upper_arm_z = GetLocalZ(upper_arm_joint);
         key.forearm_z = GetLocalZ(forearm_joint);
         key.hand_z = GetLocalZ(hand_joint);
 
+        if (collider_bounds != null)
+        {
+            key.collider_offset = collider_bounds.offset;
+            key.collider_size = collider_bounds.size;
+            key.collider_direction = collider_bounds.direction;
+        }
+        else
+        {
+            key.collider_offset = Vector2.zero;
+            key.collider_size = Vector2.zero;
+            key.collider_direction = CapsuleDirection2D.Vertical;
+        }
+
         key.per_joint_tolerance = default_per_joint_tolerance;
 
         library.keys.Add(key);
-
         MarkAssetDirty(library);
     }
 
@@ -447,8 +498,6 @@ public sealed class ArmPoseDriver : MonoBehaviour
 
     /* AngleIsBeyond
      * Return true if moving from start toward target has passed sample.
-     * This uses signed delta to target and compares to signed delta to sample.
-     * Useful near wrap gates.
      * @param start Start angle in degrees
      * @param sample Sample gate angle in degrees
      * @param current Current angle in degrees

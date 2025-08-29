@@ -104,7 +104,7 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 1
-  m_Mass: 0.6079421
+  m_Mass: 0.8920544
   m_LinearDamping: 0
   m_AngularDamping: 0
   m_GravityScale: 0
@@ -133,7 +133,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement2D
   player_input: {fileID: 0}
   ping_pong_target: {fileID: 8880446845215897422}
-  max_speed: 10
+  max_speed: 8
   acceleration: 40
   deceleration: 80
   move_action_ref: {fileID: -1680190386980627800, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
@@ -377,7 +377,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 347492875
   m_SortingLayer: -1
-  m_SortingOrder: 9
+  m_SortingOrder: 15
   m_Sprite: {fileID: -688252124198158299, guid: 1ac70ff593d210d4d983f050c48df571, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -658,6 +658,7 @@ GameObject:
   m_Component:
   - component: {fileID: 132555735435736551}
   - component: {fileID: 5965420065402167834}
+  - component: {fileID: 1687083789655884940}
   m_Layer: 0
   m_Name: Hand
   m_TagString: Untagged
@@ -727,7 +728,7 @@ SpriteRenderer:
   m_SortingLayerID: 347492875
   m_SortingLayer: -1
   m_SortingOrder: 12
-  m_Sprite: {fileID: 8869987070165082383, guid: f6eda8888662dd2428bd23c1e19b72ef, type: 3}
+  m_Sprite: {fileID: 3599116887338865805, guid: 77419204e683f344c9a5e691837da3de, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -738,6 +739,43 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!70 &1687083789655884940
+CapsuleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2718063957933795402}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 64
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 1
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: -0.0042172256, y: -0.6494072}
+  m_Size: {x: 0.65090793, y: 0.52861434}
+  m_Direction: 1
 --- !u!1 &3519746946988345951
 GameObject:
   m_ObjectHideFlags: 0
@@ -919,9 +957,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PingPongMovement
   owner: {fileID: 0}
-  max_speed: 22
-  acceleration: 78.7
-  deceleration: 99.8
+  max_speed: 25
+  acceleration: 80
+  deceleration: 60
   clamp_radius_sq: 5.8
   min_local_y: 0.4
   move_action_ref: {fileID: -5630151704836100654, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
@@ -1013,7 +1051,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 347492875
   m_SortingLayer: -1
-  m_SortingOrder: 10
+  m_SortingOrder: 20
   m_Sprite: {fileID: -6782540170539461665, guid: 89d1a62e61669af4bbbf16183f30f2c3, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -1343,7 +1381,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 347492875
   m_SortingLayer: -1
-  m_SortingOrder: 20
+  m_SortingOrder: 25
   m_Sprite: {fileID: -8266232866351695853, guid: 80b41a6e5853f004fa0158f0a2bf1162, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0

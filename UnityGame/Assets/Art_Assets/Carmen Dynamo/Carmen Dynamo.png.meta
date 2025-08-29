@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 483198962f1d79d4994d6d36055c74d4
+guid: 201f9261143d73a4b8758727dd749fb3
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 4898870863306898812
-    second: johnpong_hand5_0
+      213: 4749661853029928817
+    second: Carmen Dynamo_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -51,7 +51,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 80
+  spritePixelsToUnits: 100
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -139,23 +139,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: johnpong_hand5_0
+      name: Carmen Dynamo_0
       rect:
         serializedVersion: 2
-        x: 106
-        y: 94
-        width: 47
-        height: 64
-      alignment: 9
-      pivot: {x: 0.46773985, y: 1.1207061}
+        x: 221
+        y: 36
+        width: 502
+        height: 876
+      alignment: 0
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: c7d3be748194cf340800000000000000
-      internalID: 4898870863306898812
+      spriteID: 17f82116a403ae140800000000000000
+      internalID: 4749661853029928817
       vertices: []
       indices: 
       edges: []
@@ -164,7 +164,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5f378b53e73c79748b1e988fdfcc1336
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -174,7 +174,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      johnpong_hand5_0: 4898870863306898812
+      Carmen Dynamo_0: 4749661853029928817
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

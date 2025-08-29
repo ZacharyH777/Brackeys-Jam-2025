@@ -170,7 +170,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 347492875
   m_SortingLayer: -1
-  m_SortingOrder: 9
+  m_SortingOrder: 15
   m_Sprite: {fileID: 2928773011328150788, guid: a1b9fbed6cf7e9549a58ecd93c245163, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -329,6 +329,9 @@ GameObject:
   m_Component:
   - component: {fileID: 572758937653338718}
   - component: {fileID: 1684401549019482247}
+  - component: {fileID: 3532470395878042923}
+  - component: {fileID: 7306792315552745778}
+  - component: {fileID: 6152917869689536642}
   m_Layer: 0
   m_Name: Hand
   m_TagString: Untagged
@@ -345,7 +348,7 @@ Transform:
   m_GameObject: {fileID: 2712787618998114132}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.206, y: -0.28, z: 0}
+  m_LocalPosition: {x: 0.206, y: 0.26, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -409,6 +412,71 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!70 &3532470395878042923
+CapsuleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2712787618998114132}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 64
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 1
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0.027028665, y: -0.6493252}
+  m_Size: {x: 0.6519583, y: 0.53641397}
+  m_Direction: 1
+--- !u!114 &7306792315552745778
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2712787618998114132}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2329d67643dd484da7a0346e4c9d33c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PaddleKinematics
+  rigidbody2d_body: {fileID: 1922753509929116815}
+  rigidbody2d_arm: {fileID: 3660502113002012803}
+  current_velocity: {x: 0, y: 0}
+--- !u!114 &6152917869689536642
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2712787618998114132}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50d9841d0b73777458728ffc7698a434, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SurfaceZone
+  zone_type: 2
 --- !u!1 &2861792367151787122
 GameObject:
   m_ObjectHideFlags: 0
@@ -513,7 +581,7 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 1
-  m_Mass: 0.77852273
+  m_Mass: 1.0664927
   m_LinearDamping: 0
   m_AngularDamping: 0
   m_GravityScale: 0
@@ -542,8 +610,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement2D
   player_input: {fileID: 0}
   ping_pong_target: {fileID: 8916101566472507363}
-  max_speed: 10
-  acceleration: 40
+  max_speed: 15
+  acceleration: 60
   deceleration: 80
   move_action_ref: {fileID: -1680190386980627800, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   move_action_name: Move
@@ -797,9 +865,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PingPongMovement
   owner: {fileID: 0}
-  max_speed: 22
-  acceleration: 78.7
-  deceleration: 99.8
+  max_speed: 20
+  acceleration: 70
+  deceleration: 90
   clamp_radius_sq: 5.8
   min_local_y: 0.4
   move_action_ref: {fileID: -5630151704836100654, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
@@ -1013,7 +1081,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 347492875
   m_SortingLayer: -1
-  m_SortingOrder: 10
+  m_SortingOrder: 20
   m_Sprite: {fileID: 5892635665258345876, guid: 7a12d9092dd235045ac9a2e981035d0b, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -1434,7 +1502,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 347492875
   m_SortingLayer: -1
-  m_SortingOrder: 20
+  m_SortingOrder: 25
   m_Sprite: {fileID: 3787906402188654619, guid: 90b0e395a7cf01f46b87b490232c4180, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
