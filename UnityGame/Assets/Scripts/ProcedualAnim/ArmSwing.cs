@@ -16,6 +16,9 @@ segments. Saves and loads waypoints to an asset so play mode edits persist.
 */
 public class ArmSwing : MonoBehaviour
 {
+
+    public Vector3 target_positon = new Vector3(3.09f, -0.12f, 0f);
+    public Vector3 pully_position = new Vector3(-3.07f, 1.22f, 0f);
     [Header("References")]
     public Transform root;
     public Transform end_effector;
@@ -63,11 +66,11 @@ public class ArmSwing : MonoBehaviour
     {
         if (target != null)
         {
-            target.localPosition = new Vector3(3.09f, -0.12f, 0f);
+            target.localPosition = target_positon;
         }
         if (pully != null)
         {
-            pully.localPosition = new Vector3(-3.07f, 1.22f, 0f);
+            pully.localPosition = pully_position;
         }
         if (root_target != null)
         {
