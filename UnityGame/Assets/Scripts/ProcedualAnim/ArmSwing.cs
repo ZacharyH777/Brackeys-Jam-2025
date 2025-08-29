@@ -16,13 +16,9 @@ segments. Saves and loads waypoints to an asset so play mode edits persist.
 */
 public class ArmSwing : MonoBehaviour
 {
-    // Constants
-    private const float EPSILON = 1e-6f;
-    private const float MIN_SEGMENT_LENGTH = 1e-6f;
-    
+
     public Vector3 target_positon = new Vector3(3.09f, -0.12f, 0f);
     public Vector3 pully_position = new Vector3(-3.07f, 1.22f, 0f);
-    
     [Header("References")]
     public Transform root;
     public Transform end_effector;
@@ -52,70 +48,67 @@ public class ArmSwing : MonoBehaviour
 
     // Playback state
     private bool is_playing;
-    private float normalized_progress;
-    private float current_speed;
-    private int waypoint_count;
-    
-    // Cached values to reduce repeated calculations
-    private bool has_valid_setup;
-    private float delta_time_cache;
-    private float target_speed_cache;
-    private float master_length_reciprocal;
+    private float normalized_progress;     // 0..1 across the whole path
+    private float current_speed;           // units per second
+    private int waypoint_count;            // min(list counts)
 
     // Precomputed arc lengths
     private readonly List<float> pully_cumulative_distances = new List<float>();
-    private readonly List<Vector3> target_positions_cache = new List<Vector3>();
     private readonly List<float> target_cumulative_distances = new List<float>();
     private float pully_length;
     private float target_length;
-    private float master_length;
+    private float master_length;           // max of both lengths
 
-    // Input caching
-#if ENABLE_INPUT_SYSTEM
-    private Keyboard keyboard_cache;
-    private Gamepad gamepad_cache;
-#endif
-
+    /*
+    Set default local positions, optionally load the asset, then precompute lengths.
+    */
     void Awake()
     {
-        InitializeDefaults();
-        CacheInputDevices();
-        
-        if (auto_load_on_awake && path_asset != null)
+        if (target != null)
         {
-            LoadFromAsset();
+            target.localPosition = target_positon;
+        }
+        if (pully != null)
+        {
+            pully.localPosition = pully_position;
+        }
+        if (root_target != null)
+        {
+            root_target.localPosition = Vector3.zero;
+        }
+
+        if (auto_load_on_awake)
+        {
+            if (path_asset != null)
+            {
+                LoadFromAsset();
+            }
         }
         SyncCountsAndLengths();
     }
 
-    private void InitializeDefaults()
-    {
-        if (target != null)
-            target.localPosition = target_positon;
-        if (pully != null)
-            pully.localPosition = pully_position;
-        if (root_target != null)
-            root_target.localPosition = Vector3.zero;
-    }
-
-    private void CacheInputDevices()
-    {
-#if ENABLE_INPUT_SYSTEM
-        keyboard_cache = Keyboard.current;
-        gamepad_cache = Gamepad.current;
-#endif
-    }
-
 #if UNITY_EDITOR
+    /*
+    Auto save on leaving play mode when enabled.
+    */
     void OnDisable()
     {
-        if (Application.isPlaying && auto_save_on_stop && path_asset != null)
+        if (Application.isPlaying)
         {
-            SaveToAsset();
+            if (auto_save_on_stop)
+            {
+                if (path_asset != null)
+                {
+                    SaveToAsset();
+                }
+            }
         }
     }
 #endif
 
+    /*
+    Start playback on input. Advance progress using global speed with acceleration.
+    */
     void Update()
     {
         if (GetPlayPressed())
@@ -123,65 +116,75 @@ public class ArmSwing : MonoBehaviour
             StartPlayback();
         }
 
-        // Early exit with cached validity check
-        if (!has_valid_setup || !is_playing)
+        if (!is_playing)
+        {
+            return;
+        }
+        if (pully == null)
         {
             is_playing = false;
             return;
         }
-
-        // Cache delta time to avoid multiple property access
-        delta_time_cache = Time.deltaTime;
-        
-        // Calculate desired speed with cached curve evaluation
-        float curve_multiplier = SafeCurve(speed_over_path, normalized_progress);
-        float desired_speed = target_speed_cache * curve_multiplier;
-
-        // Update current speed
-        current_speed = Mathf.MoveTowards(current_speed, desired_speed, acceleration * delta_time_cache);
-
-        // Update progress using cached reciprocal to avoid division
-        float delta_u = current_speed * master_length_reciprocal * delta_time_cache;
-        normalized_progress += delta_u;
-
-        // Check completion
-        if (normalized_progress >= 1f)
+        if (target == null)
         {
-            CompletePlayback();
+            is_playing = false;
+            return;
+        }
+        if (waypoint_count < 2)
+        {
+            is_playing = false;
+            return;
+        }
+        if (master_length <= 1e-6f)
+        {
+            // Tiny floor prevents division by zero when path length is almost zero
+            is_playing = false;
             return;
         }
 
-        // Update positions
-        UpdateTransformPositions();
-    }
+        // Desired speed comes from a flat target plus a curve over progress
+        float desired_speed = Mathf.Max(0f, target_speed) * SafeCurve(speed_over_path, normalized_progress);
 
-    private void CompletePlayback()
-    {
-        normalized_progress = 1f;
-        int lastIndex = waypoint_count - 1;
-        target.localPosition = target_positions[lastIndex];
-        pully.localPosition = pully_positions[lastIndex];
-        is_playing = false;
-    }
+        // Accelerate toward desired speed using a per frame bound
+        current_speed = MoveToward(current_speed, desired_speed, acceleration * Time.deltaTime);
 
-    private void UpdateTransformPositions()
-    {
+        // Convert speed to normalized progress by dividing by the full path length
+        float delta_u = (current_speed / master_length) * Time.deltaTime;
+        normalized_progress = normalized_progress + delta_u;
+
+        if (normalized_progress >= 1f)
+        {
+            normalized_progress = 1f;
+            target.localPosition = target_positions[waypoint_count - 1];
+            pully.localPosition = pully_positions[waypoint_count - 1];
+            is_playing = false;
+            return;
+        }
+
         float pully_distance = normalized_progress * pully_length;
         float target_distance = normalized_progress * target_length;
 
-        target.localPosition = SampleAtDistanceOptimized(target_positions, target_cumulative_distances, target_distance);
-        pully.localPosition = SampleAtDistanceOptimized(pully_positions, pully_cumulative_distances, pully_distance);
+        // Sample both polylines at their respective arc distances
+        target.localPosition = SampleAtDistance(target_positions, target_cumulative_distances, target_distance);
+        pully.localPosition = SampleAtDistance(pully_positions, pully_cumulative_distances, pully_distance);
     }
 
+    /*
+    Add current local positions to the waypoint lists.
+    */
     [ContextMenu("Save Position")]
     public void SavePosition()
     {
-        if (pully == null || target == null)
+        if (pully == null)
         {
             Debug.LogWarning("Assign pully and target before saving positions");
             return;
         }
-
+        if (target == null)
+        {
+            Debug.LogWarning("Assign pully and target before saving positions");
+            return;
+        }
 #if UNITY_EDITOR
         Undo.RecordObject(this, "Save ArmSwing Position");
 #endif
@@ -194,6 +197,9 @@ public class ArmSwing : MonoBehaviour
 #endif
     }
 
+    /*
+    Clear all waypoints and reset playback state.
+    */
     public void ClearPositions()
     {
 #if UNITY_EDITOR
@@ -201,7 +207,9 @@ public class ArmSwing : MonoBehaviour
 #endif
         pully_positions.Clear();
         target_positions.Clear();
-        ResetPlaybackState();
+        is_playing = false;
+        normalized_progress = 0f;
+        current_speed = 0f;
 
         SyncCountsAndLengths();
 #if UNITY_EDITOR
@@ -209,57 +217,68 @@ public class ArmSwing : MonoBehaviour
 #endif
     }
 
+    /*
+    Begin playback from the start with a fresh speed ramp.
+    */
     public void StartPlayback()
     {
         SyncCountsAndLengths();
-        if (!ValidatePlaybackConditions())
+        if (waypoint_count < 2)
         {
+            Debug.LogWarning("Need at least two saved positions");
+            is_playing = false;
+            return;
+        }
+        if (master_length <= 1e-6f)
+        {
+            Debug.LogWarning("Path length is too small");
             is_playing = false;
             return;
         }
 
-        ResetPlaybackState();
+        normalized_progress = 0f;
+        current_speed = 0f;
         is_playing = true;
 
         target.localPosition = target_positions[0];
         pully.localPosition = pully_positions[0];
     }
 
-    private void ResetPlaybackState()
-    {
-        normalized_progress = 0f;
-        current_speed = 0f;
-    }
-
-    private bool ValidatePlaybackConditions()
-    {
-        return waypoint_count >= 2 && master_length > EPSILON;
-    }
-
+    /*
+    Snap transforms to the first saved pose.
+    */
     public void SnapToFirst()
     {
-        if (pully == null || target == null || waypoint_count == 0) return;
+        if (pully == null)
+        {
+            return;
+        }
+        if (target == null)
+        {
+            return;
+        }
+        if (waypoint_count == 0)
+        {
+            return;
+        }
         target.localPosition = target_positions[0];
         pully.localPosition = pully_positions[0];
     }
 
+    /*
+    Save the waypoint lists to the asset. Editor only.
+    */
     public void SaveToAsset()
     {
 #if UNITY_EDITOR
-        if (!EnsureAsset()) return;
+        if (!EnsureAsset())
+        {
+            return;
+        }
 
         Undo.RecordObject(path_asset, "Save ArmSwing Path Asset");
-        
-        // Reuse existing lists instead of creating new ones
-        if (path_asset.pully_positions == null)
-            path_asset.pully_positions = new List<Vector3>();
-        if (path_asset.target_positions == null)
-            path_asset.target_positions = new List<Vector3>();
-            
-        path_asset.pully_positions.Clear();
-        path_asset.target_positions.Clear();
-        path_asset.pully_positions.AddRange(pully_positions);
-        path_asset.target_positions.AddRange(target_positions);
+        path_asset.pully_positions = new List<Vector3>(pully_positions);
+        path_asset.target_positions = new List<Vector3>(target_positions);
 
         EditorUtility.SetDirty(path_asset);
         AssetDatabase.SaveAssets();
@@ -268,6 +287,9 @@ public class ArmSwing : MonoBehaviour
 #endif
     }
 
+    /*
+    Load the waypoint lists from the asset and reset playback.
+    */
     public void LoadFromAsset()
     {
         if (path_asset == null)
@@ -275,118 +297,219 @@ public class ArmSwing : MonoBehaviour
             Debug.LogWarning("Assign a path asset first");
             return;
         }
-
 #if UNITY_EDITOR
         Undo.RecordObject(this, "Load ArmSwing Path From Asset");
 #endif
-        
-        // Clear and reuse existing lists
-        pully_positions.Clear();
-        target_positions.Clear();
-        
-        if (path_asset.pully_positions != null)
-            pully_positions.AddRange(path_asset.pully_positions);
-        if (path_asset.target_positions != null)
-            target_positions.AddRange(path_asset.target_positions);
+        pully_positions = new List<Vector3>(path_asset.pully_positions != null ? path_asset.pully_positions : new List<Vector3>());
+        target_positions = new List<Vector3>(path_asset.target_positions != null ? path_asset.target_positions : new List<Vector3>());
 
-        ResetPlaybackState();
+        is_playing = false;
+        normalized_progress = 0f;
+        current_speed = 0f;
+
         SyncCountsAndLengths();
-        
 #if UNITY_EDITOR
         EditorUtility.SetDirty(this);
 #endif
     }
 
+    /*
+    Precompute cumulative arc lengths and the master length used for time scaling.
+    */
     private void SyncCountsAndLengths()
     {
-        waypoint_count = Mathf.Min(pully_positions?.Count ?? 0, target_positions?.Count ?? 0);
+        int pully_count = 0;
+        if (pully_positions != null)
+        {
+            pully_count = pully_positions.Count;
+        }
 
-        BuildCumulativeOptimized(pully_positions, pully_cumulative_distances, out pully_length);
-        BuildCumulativeOptimized(target_positions, target_cumulative_distances, out target_length);
-        
+        int target_count = 0;
+        if (target_positions != null)
+        {
+            target_count = target_positions.Count;
+        }
+
+        waypoint_count = Mathf.Min(pully_count, target_count);
+
+        BuildCumulative(pully_positions, pully_cumulative_distances, out pully_length);
+        BuildCumulative(target_positions, target_cumulative_distances, out target_length);
         master_length = Mathf.Max(pully_length, target_length);
-        master_length_reciprocal = master_length > EPSILON ? 1f / master_length : 0f;
-        target_speed_cache = target_speed;
-        
-        // Update validity check
-        has_valid_setup = pully != null && target != null && waypoint_count >= 2 && master_length > EPSILON;
     }
 
-    private static void BuildCumulativeOptimized(List<Vector3> points, List<float> cumulative, out float total_length)
+    /*
+    Build a cumulative distance table for a polyline.
+    @param points List of local points defining the path.
+    @param cumulative Output list of cumulative distances.
+    @param total_length Output total arc length of the path.
+    */
+    private static void BuildCumulative(List<Vector3> points, List<float> cumulative, out float total_length)
     {
         cumulative.Clear();
         total_length = 0f;
 
-        if (points == null || points.Count == 0) return;
+        if (points == null)
+        {
+            return;
+        }
+        if (points.Count == 0)
+        {
+            return;
+        }
 
         cumulative.Add(0f);
-        
-        // Use squared distances for comparison when possible
         for (int i = 1; i < points.Count; i++)
         {
-            Vector3 delta = points[i] - points[i - 1];
-            float distance = delta.magnitude;
-            total_length += distance;
+            total_length = total_length + Vector3.Distance(points[i - 1], points[i]);
             cumulative.Add(total_length);
         }
     }
 
-    // Optimized sampling using binary search instead of linear search
-    private static Vector3 SampleAtDistanceOptimized(List<Vector3> points, List<float> cumulative, float s)
+    /*
+    Sample a polyline at a given arc distance using the cumulative table.
+    Uses small floors to avoid divide by zero when a segment is extremely short.
+    @param points List of local points defining the path.
+    @param cumulative Cumulative distance table matching the points.
+    @param s Arc distance along the path.
+    @return Interpolated local point at the requested distance.
+    */
+    private static Vector3 SampleAtDistance(List<Vector3> points, List<float> cumulative, float s)
     {
-        if (points == null || points.Count == 0) return Vector3.zero;
-        if (points.Count == 1) return points[0];
-        if (cumulative == null || cumulative.Count != points.Count) 
+        if (points == null)
+        {
+            return Vector3.zero;
+        }
+        if (points.Count == 0)
+        {
+            return Vector3.zero;
+        }
+        if (points.Count == 1)
+        {
+            return points[0];
+        }
+        if (cumulative == null)
+        {
             return points[points.Count - 1];
+        }
+        if (cumulative.Count != points.Count)
+        {
+            return points[points.Count - 1];
+        }
 
         float total = cumulative[cumulative.Count - 1];
-        if (total <= EPSILON) return points[points.Count - 1];
-        if (s <= 0f) return points[0];
-        if (s >= total) return points[points.Count - 1];
+        if (total <= 1e-6f)
+        {
+            // Avoid division by zero when the whole path is almost a point
+            return points[points.Count - 1];
+        }
 
-        // Binary search for the segment
-        int hi = BinarySearchCumulative(cumulative, s);
+        if (s <= 0f)
+        {
+            return points[0];
+        }
+        if (s >= total)
+        {
+            return points[points.Count - 1];
+        }
+
+        // Find the segment that contains the target distance s
+        int hi = 1;
+        while (hi < cumulative.Count && cumulative[hi] < s)
+        {
+            hi = hi + 1;
+        }
         int lo = hi - 1;
 
         float segment_start_s = cumulative[lo];
         float segment_length = cumulative[hi] - segment_start_s;
-        
-        if (segment_length < MIN_SEGMENT_LENGTH) 
-            segment_length = MIN_SEGMENT_LENGTH;
-            
+        if (segment_length < 1e-6f)
+        {
+            // Use a tiny floor so interpolation stays stable on degenerate segments
+            segment_length = 1e-6f;
+        }
         float t = (s - segment_start_s) / segment_length;
         return Vector3.LerpUnclamped(points[lo], points[hi], t);
     }
 
-    private static int BinarySearchCumulative(List<float> cumulative, float target)
-    {
-        int left = 1;
-        int right = cumulative.Count - 1;
-        
-        while (left <= right)
-        {
-            int mid = (left + right) / 2;
-            if (cumulative[mid] < target)
-                left = mid + 1;
-            else
-                right = mid - 1;
-        }
-        
-        return left;
-    }
-
+    /*
+    Evaluate the speed curve safely. Returns non negative values only.
+    @param curve The speed modulation curve.
+    @param x Normalized progress from zero to one.
+    @return A non negative multiplier applied to base speed.
+    */
     private static float SafeCurve(AnimationCurve curve, float x)
     {
-        if (curve == null) return 1f;
-        return Mathf.Max(0f, curve.Evaluate(Mathf.Clamp01(x)));
+        if (curve == null)
+        {
+            return 1f;
+        }
+        float clamped = Mathf.Clamp01(x);
+        float evaluated = curve.Evaluate(clamped);
+        if (evaluated < 0f)
+        {
+            return 0f;
+        }
+        return evaluated;
     }
 
+    /*
+    Move a value toward a target by a maximum step per call.
+    @param current Current value.
+    @param target Target value.
+    @param max_delta Maximum change this call.
+    @return The moved value clamped so it does not overshoot.
+    */
+    private static float MoveToward(float current, float target, float max_delta)
+    {
+        if (current < target)
+        {
+            float next = current + max_delta;
+            if (next > target)
+            {
+                return target;
+            }
+            return next;
+        }
+        if (current > target)
+        {
+            float next = current - max_delta;
+            if (next < target)
+            {
+                return target;
+            }
+            return next;
+        }
+        return current;
+    }
+
+    /*
+    Check for play input from keyboard or gamepad.
+    @return True when play input was pressed this frame.
+    */
     private bool GetPlayPressed()
     {
 #if ENABLE_INPUT_SYSTEM
-        bool keyboard_pressed = keyboard_cache?.spaceKey.wasPressedThisFrame ?? false;
-        bool gamepad_pressed = (gamepad_cache?.startButton.wasPressedThisFrame ?? false) || 
-                               (gamepad_cache?.buttonSouth.wasPressedThisFrame ?? false);
+        bool keyboard_pressed = false;
+        if (Keyboard.current != null)
+        {
+            keyboard_pressed = Keyboard.current.spaceKey.wasPressedThisFrame;
+        }
+
+        bool gamepad_pressed = false;
+        if (Gamepad.current != null)
+        {
+            if (Gamepad.current.startButton.wasPressedThisFrame)
+            {
+                gamepad_pressed = true;
+            }
+            else
+            {
+                if (Gamepad.current.buttonSouth.wasPressedThisFrame)
+                {
+                    gamepad_pressed = true;
+                }
+            }
+        }
         return keyboard_pressed || gamepad_pressed;
 #else
         return Input.GetKeyDown(KeyCode.Space);
@@ -394,9 +517,16 @@ public class ArmSwing : MonoBehaviour
     }
 
 #if UNITY_EDITOR
+    /*
+    Create a new asset when none is assigned.
+    @return True when an asset is present or created.
+    */
     private bool EnsureAsset()
     {
-        if (path_asset != null) return true;
+        if (path_asset != null)
+        {
+            return true;
+        }
 
         string path = EditorUtility.SaveFilePanelInProject(
             "Create ArmSwing Path Asset",
@@ -404,7 +534,10 @@ public class ArmSwing : MonoBehaviour
             "asset",
             "Choose where to save the path asset");
 
-        if (string.IsNullOrEmpty(path)) return false;
+        if (string.IsNullOrEmpty(path))
+        {
+            return false;
+        }
 
         ArmSwingPath asset = ScriptableObject.CreateInstance<ArmSwingPath>();
         AssetDatabase.CreateAsset(asset, path);
@@ -418,6 +551,9 @@ public class ArmSwing : MonoBehaviour
 }
 
 #if UNITY_EDITOR
+/*
+Custom inspector with buttons for saving, clearing, playback, and asset io.
+*/
 [CustomEditor(typeof(ArmSwing))]
 public class ArmSwingEditor : Editor
 {

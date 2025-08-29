@@ -43,7 +43,10 @@ public class PingPongMove2 : MonoBehaviour
     */
     public void SetOwner(PlayerInput player_input)
     {
-        if (owner == player_input) return;
+        if (owner == player_input)
+        {
+            return;
+        }
 
         if (is_subscribed && owner != null)
         {
@@ -80,6 +83,16 @@ public class PingPongMove2 : MonoBehaviour
         rigidbody2d.angularDrag = 0f;
 #endif
         rigidbody2d.constraints = RigidbodyConstraints2D.FreezeRotation;
+
+        if (rigidbody2d.bodyType != RigidbodyType2D.Dynamic)
+        {
+            Debug.LogWarning("Rigidbody type is not dynamic. AddForce will not move it.");
+        }
+
+        if (!rigidbody2d.simulated)
+        {
+            Debug.LogWarning("Rigidbody is not simulated. Physics will not run.");
+        }
     }
 
     /*
@@ -124,7 +137,15 @@ public class PingPongMove2 : MonoBehaviour
     {
         UnbindInput();
 
-        if (owner == null || owner.actions == null) return;
+        if (owner == null)
+        {
+            return;
+        }
+
+        if (owner.actions == null)
+        {
+            return;
+        }
 
         InputActionAsset action_asset = owner.actions;
 
@@ -132,7 +153,12 @@ public class PingPongMove2 : MonoBehaviour
         {
             move_action = action_asset.FindAction(move_action_ref.action.id);
         }
-        else if (!string.IsNullOrEmpty(move_action_name))
+        else
+        {
+            Debug.LogWarning("Could not find action id.");
+        }
+
+        if (move_action == null && !string.IsNullOrEmpty(move_action_name))
         {
             move_action = action_asset.FindAction(move_action_name, throwIfNotFound: false);
         }
@@ -161,6 +187,7 @@ public class PingPongMove2 : MonoBehaviour
             move_action.canceled -= OnMoveCanceled;
             move_action = null;
         }
+
         move_input = Vector2.zero;
     }
 
@@ -189,17 +216,32 @@ public class PingPongMove2 : MonoBehaviour
     private Vector2 GetMirrorVector()
     {
         Vector2 m = Vector2.one;
+
         if (auto_mirror_from_scale)
         {
             Vector3 s = transform.lossyScale;
-            if (s.x < 0f) m.x = -1f;
-            if (s.y < 0f) m.y = -1f;
+
+            if (s.x < 0f)
+            {
+                m.x = -1f;
+            }
+            if (s.y < 0f)
+            {
+                m.y = -1f;
+            }
         }
         else
         {
-            if (mirror_x) m.x = -1f;
-            if (mirror_y) m.y = -1f;
+            if (mirror_x)
+            {
+                m.x = -1f;
+            }
+            if (mirror_y)
+            {
+                m.y = -1f;
+            }
         }
+
         return m;
     }
 
@@ -210,7 +252,10 @@ public class PingPongMove2 : MonoBehaviour
     */
     private static Vector2 ApplyMirror(Vector2 v, Vector2 m)
     {
-        return new Vector2(v.x * m.x, v.y * m.y);
+        Vector2 r;
+        r.x = v.x * m.x;
+        r.y = v.y * m.y;
+        return r;
     }
 
     /*
@@ -218,7 +263,11 @@ public class PingPongMove2 : MonoBehaviour
     */
     void FixedUpdate()
     {
-        if (move_action == null) return;
+        if (move_action == null)
+        {
+            Debug.LogWarning("Move action is null.");
+            return;
+        }
 
         if (also_poll_each_fixed_update)
         {
@@ -226,11 +275,12 @@ public class PingPongMove2 : MonoBehaviour
         }
 
         Vector2 mirror = GetMirrorVector();
+
         Vector2 input_vector = move_input;
 
         if (input_vector.sqrMagnitude > 1f)
         {
-            input_vector.Normalize();
+            input_vector = input_vector.normalized;
         }
 
         /* Mirror input to match facing */
@@ -253,7 +303,12 @@ public class PingPongMove2 : MonoBehaviour
 
             if (delta_magnitude > max_step)
             {
-                delta_velocity *= (max_step / delta_magnitude);
+                float denom = delta_magnitude;
+                if (denom < 1e-6f)
+                {
+                    denom = 1e-6f;
+                }
+                delta_velocity *= (max_step / denom);
             }
 
             rigidbody2d.AddForce(rigidbody2d.mass * delta_velocity, ForceMode2D.Impulse);
@@ -266,7 +321,16 @@ public class PingPongMove2 : MonoBehaviour
                 float new_speed = Mathf.Max(0f, speed - deceleration * delta_time);
                 if (!Mathf.Approximately(new_speed, speed))
                 {
-                    Vector2 normalized_velocity = (speed < 1e-6f) ? velocity / 1e-6f : velocity / speed;
+                    Vector2 normalized_velocity;
+                    if (speed < 1e-6f)
+                    {
+                        normalized_velocity = velocity / 1e-6f;
+                    }
+                    else
+                    {
+                        normalized_velocity = velocity / speed;
+                    }
+
                     Vector2 delta_velocity = (new_speed - speed) * normalized_velocity;
                     rigidbody2d.AddForce(rigidbody2d.mass * delta_velocity, ForceMode2D.Impulse);
                 }
@@ -282,12 +346,26 @@ public class PingPongMove2 : MonoBehaviour
 
         if (speed_magnitude > max_speed)
         {
-            capped_velocity *= (max_speed / speed_magnitude);
+            float denom_speed = speed_magnitude;
+            if (denom_speed < 1e-6f)
+            {
+                denom_speed = 1e-6f;
+            }
+            capped_velocity *= (max_speed / denom_speed);
         }
 
         Transform origin_transform = transform.parent;
         Vector2 position_world = rigidbody2d.position;
-        Vector2 position_local = (origin_transform != null) ? origin_transform.InverseTransformPoint(position_world) : position_world;
+        Vector2 position_local;
+
+        if (origin_transform != null)
+        {
+            position_local = origin_transform.InverseTransformPoint(position_world);
+        }
+        else
+        {
+            position_local = position_world;
+        }
 
         /* Work in mirrored-local space so floor/circle rules stay identical */
         Vector2 pos_local_m = ApplyMirror(position_local, mirror);
@@ -296,6 +374,16 @@ public class PingPongMove2 : MonoBehaviour
         Vector2 clamped_local_m = pos_local_m;
 
         float radius_squared = Mathf.Max(0f, clamp_radius_sq);
+        float radius;
+
+        if (radius_squared > 0f)
+        {
+            radius = Mathf.Sqrt(radius_squared);
+        }
+        else
+        {
+            radius = 0f;
+        }
 
         if (clamped_local_m.y < min_local_y)
         {
@@ -305,9 +393,9 @@ public class PingPongMove2 : MonoBehaviour
 
         if (radius_squared > 0f)
         {
-            if (clamped_local_m.sqrMagnitude > radius_squared)
+            float distance_squared = clamped_local_m.sqrMagnitude;
+            if (distance_squared > radius_squared)
             {
-                float radius = Mathf.Sqrt(radius_squared);
                 if (clamped_local_m.y <= min_local_y + 1e-6f)
                 {
                     float x_limit = Mathf.Sqrt(Mathf.Max(0f, radius_squared - min_local_y * min_local_y));
@@ -328,6 +416,7 @@ public class PingPongMove2 : MonoBehaviour
                         clamped_local_m.y = min_local_y;
                     }
                 }
+
                 position_changed = true;
             }
         }
@@ -335,11 +424,31 @@ public class PingPongMove2 : MonoBehaviour
         if (position_changed)
         {
             Vector2 clamped_local = ApplyMirror(clamped_local_m, mirror);
-            Vector2 clamped_world_position = (origin_transform != null) ? origin_transform.TransformPoint(clamped_local) : clamped_local;
+
+            Vector2 clamped_world_position;
+            if (origin_transform != null)
+            {
+                clamped_world_position = origin_transform.TransformPoint(clamped_local);
+            }
+            else
+            {
+                clamped_world_position = clamped_local;
+            }
+
             rigidbody2d.position = clamped_world_position;
 
             Vector2 velocity_world = capped_velocity;
-            Vector2 velocity_local = (origin_transform != null) ? origin_transform.InverseTransformVector(velocity_world) : velocity_world;
+            Vector2 velocity_local;
+
+            if (origin_transform != null)
+            {
+                velocity_local = origin_transform.InverseTransformVector(velocity_world);
+            }
+            else
+            {
+                velocity_local = velocity_world;
+            }
+
             Vector2 vel_local_m = ApplyMirror(velocity_local, mirror);
 
             bool on_circle = radius_squared > 0f && Mathf.Abs(clamped_local_m.sqrMagnitude - radius_squared) <= 1e-4f;
@@ -347,7 +456,10 @@ public class PingPongMove2 : MonoBehaviour
             {
                 Vector2 normal_local_m = clamped_local_m.normalized;
                 float radial = Vector2.Dot(vel_local_m, normal_local_m);
-                if (radial > 0f) vel_local_m -= radial * normal_local_m;
+                if (radial > 0f)
+                {
+                    vel_local_m -= radial * normal_local_m;
+                }
             }
 
             if (clamped_local_m.y <= min_local_y + 1e-6f && vel_local_m.y < 0f)
@@ -356,12 +468,25 @@ public class PingPongMove2 : MonoBehaviour
             }
 
             velocity_local = ApplyMirror(vel_local_m, mirror);
-            capped_velocity = (origin_transform != null) ? origin_transform.TransformVector(velocity_local) : velocity_local;
+
+            if (origin_transform != null)
+            {
+                capped_velocity = origin_transform.TransformVector(velocity_local);
+            }
+            else
+            {
+                capped_velocity = velocity_local;
+            }
 
             float speed_post = capped_velocity.magnitude;
             if (speed_post > max_speed)
             {
-                capped_velocity *= (max_speed / speed_post);
+                float denom_post = speed_post;
+                if (denom_post < 1e-6f)
+                {
+                    denom_post = 1e-6f;
+                }
+                capped_velocity *= (max_speed / denom_post);
             }
         }
 
