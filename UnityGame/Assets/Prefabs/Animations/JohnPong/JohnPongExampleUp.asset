@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8cd599754f35d344ac29e1cf9821d1e, type: 3}
+  m_Name: JohnPongExampleUp
+  m_EditorClassIdentifier: Assembly-CSharp::ArmPoseLibrary
+  keys:
+  - pose_name: Pose 0
+    upper_arm_sprite: {fileID: -5610770521457871929, guid: ccd78b2664e9a204fb50a3271533ac0b, type: 3}
+    forearm_sprite: {fileID: 8773093135767091644, guid: ed3090f9e5b904d4d9d9c9af956908f4, type: 3}
+    hand_sprite: {fileID: 4898870863306898812, guid: 483198962f1d79d4994d6d36055c74d4, type: 3}
+    upper_arm_z: 21.462677
+    forearm_z: 354.11386
+    hand_z: 61.7294
+    per_joint_tolerance: 12
+  - pose_name: Pose 1
+    upper_arm_sprite: {fileID: 5979337712880841701, guid: 13e4a02b03846e843a195bfb6e1905ab, type: 3}
+    forearm_sprite: {fileID: 6671147490544697867, guid: 1b702af4af43b614a8cd2bb72c9f0ce3, type: 3}
+    hand_sprite: {fileID: -4828763305920022724, guid: f2799e43355eef843b6c16f85f7d4f0d, type: 3}
+    upper_arm_z: 55.106327
+    forearm_z: 354.12207
+    hand_z: 61.737583
+    per_joint_tolerance: 12

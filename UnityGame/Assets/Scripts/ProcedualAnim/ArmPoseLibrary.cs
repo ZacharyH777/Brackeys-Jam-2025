@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+[CreateAssetMenu(menuName = "Animation/Arm Pose Library", fileName = "ArmPoseLibrary")]
 public sealed class ArmPoseLibrary : ScriptableObject
 {
     [Serializable]
