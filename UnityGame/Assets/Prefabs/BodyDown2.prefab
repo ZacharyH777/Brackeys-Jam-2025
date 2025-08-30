@@ -795,7 +795,7 @@ GameObject:
   - component: {fileID: 5843963467481695659}
   - component: {fileID: 6501467663327426235}
   m_Layer: 0
-  m_Name: Body2Down
+  m_Name: BodyDown2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -1,0 +1,158 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8cd599754f35d344ac29e1cf9821d1e, type: 3}
+  m_Name: JohnnyUp
+  m_EditorClassIdentifier: Assembly-CSharp::ArmPoseLibrary
+  keys:
+  - pose_name: Pose 0
+    upper_arm_sprite: {fileID: 5432673994934100513, guid: fb133f831097f734e87cbae1d7178bbe, type: 3}
+    forearm_sprite: {fileID: 3579655328416065290, guid: 711d59ccd24c13d4db5c38f154ba30d5, type: 3}
+    hand_sprite: {fileID: 4898870863306898812, guid: 483198962f1d79d4994d6d36055c74d4, type: 3}
+    upper_arm_z: 13.63834
+    forearm_z: 354.12546
+    hand_z: 315.21573
+    collider_offset: {x: -0.0042172256, y: -0.6494072}
+    collider_size: {x: 0.65090793, y: 0.52861434}
+    collider_direction: 1
+    per_joint_tolerance: 24
+  - pose_name: Pose 1
+    upper_arm_sprite: {fileID: 8943684643886422976, guid: 0d03f198dddcad24bb2c736ec5708698, type: 3}
+    forearm_sprite: {fileID: 746246249989422700, guid: d7edd49bc10707a40b74503b5c678bd1, type: 3}
+    hand_sprite: {fileID: -4828763305920022724, guid: f2799e43355eef843b6c16f85f7d4f0d, type: 3}
+    upper_arm_z: 48.28041
+    forearm_z: 354.12546
+    hand_z: 315.21573
+    collider_offset: {x: 0.025054706, y: -0.58001184}
+    collider_size: {x: 0.7094536, y: 0.46164784}
+    collider_direction: 1
+    per_joint_tolerance: 24
+  - pose_name: Pose 2
+    upper_arm_sprite: {fileID: 8412297705826135122, guid: a916ee4cc6d22ec4f94b7ed452258ead, type: 3}
+    forearm_sprite: {fileID: 8329764028924224238, guid: 0fbe46a1713c27d489a045e7f8f97368, type: 3}
+    hand_sprite: {fileID: -8696079286912176904, guid: e5d73f7d820e39e4ab24d23a8e5b0db1, type: 3}
+    upper_arm_z: 78.203575
+    forearm_z: 354.12546
+    hand_z: 315.21573
+    collider_offset: {x: 0.02970068, y: -0.21778071}
+    collider_size: {x: 0.8295445, y: 0.5488589}
+    collider_direction: 1
+    per_joint_tolerance: 24
+  - pose_name: Pose 3
+    upper_arm_sprite: {fileID: 5979337712880841701, guid: 13e4a02b03846e843a195bfb6e1905ab, type: 3}
+    forearm_sprite: {fileID: 6671147490544697867, guid: 1b702af4af43b614a8cd2bb72c9f0ce3, type: 3}
+    hand_sprite: {fileID: 2105304690372799853, guid: 6d1ff36885da3894f95573206cf5693b, type: 3}
+    upper_arm_z: 115.30939
+    forearm_z: 354.13364
+    hand_z: 315.20425
+    collider_offset: {x: 0.011478886, y: 0.17346808}
+    collider_size: {x: 0.7915633, y: 0.56119096}
+    collider_direction: 1
+    per_joint_tolerance: 24
+  - pose_name: Pose 4
+    upper_arm_sprite: {fileID: -5610770521457871929, guid: ccd78b2664e9a204fb50a3271533ac0b, type: 3}
+    forearm_sprite: {fileID: 8773093135767091644, guid: ed3090f9e5b904d4d9d9c9af956908f4, type: 3}
+    hand_sprite: {fileID: -6659826146745299651, guid: 8ab60aeeaad1fe6488a2f74d0ced58b4, type: 3}
+    upper_arm_z: 137.55212
+    forearm_z: 354.12546
+    hand_z: 315.21573
+    collider_offset: {x: -0.0081529, y: 0.22075348}
+    collider_size: {x: 0.7237439, y: 0.6377811}
+    collider_direction: 1
+    per_joint_tolerance: 24
+  - pose_name: Pose 5
+    upper_arm_sprite: {fileID: 5432673994934100513, guid: fb133f831097f734e87cbae1d7178bbe, type: 3}
+    forearm_sprite: {fileID: 3579655328416065290, guid: 711d59ccd24c13d4db5c38f154ba30d5, type: 3}
+    hand_sprite: {fileID: 4898870863306898812, guid: 483198962f1d79d4994d6d36055c74d4, type: 3}
+    upper_arm_z: 351.1346
+    forearm_z: 87.59577
+    hand_z: 290.03958
+    collider_offset: {x: -0.0042172256, y: -0.6494072}
+    collider_size: {x: 0.65090793, y: 0.52861434}
+    collider_direction: 1
+    per_joint_tolerance: 24
+  - pose_name: Pose 6
+    upper_arm_sprite: {fileID: 8943684643886422976, guid: 0d03f198dddcad24bb2c736ec5708698, type: 3}
+    forearm_sprite: {fileID: 746246249989422700, guid: d7edd49bc10707a40b74503b5c678bd1, type: 3}
+    hand_sprite: {fileID: -4828763305920022724, guid: f2799e43355eef843b6c16f85f7d4f0d, type: 3}
+    upper_arm_z: 27.683128
+    forearm_z: 87.24202
+    hand_z: 290.61423
+    collider_offset: {x: 0.020916544, y: -0.5406552}
+    collider_size: {x: 0.7011726, y: 0.49555856}
+    collider_direction: 1
+    per_joint_tolerance: 24
+  - pose_name: Pose 7
+    upper_arm_sprite: {fileID: 8412297705826135122, guid: a916ee4cc6d22ec4f94b7ed452258ead, type: 3}
+    forearm_sprite: {fileID: 8329764028924224238, guid: 0fbe46a1713c27d489a045e7f8f97368, type: 3}
+    hand_sprite: {fileID: -8696079286912176904, guid: e5d73f7d820e39e4ab24d23a8e5b0db1, type: 3}
+    upper_arm_z: 64.502785
+    forearm_z: 72.95818
+    hand_z: 298.6957
+    collider_offset: {x: 0.015707066, y: -0.25038165}
+    collider_size: {x: 0.7440335, y: 0.45364156}
+    collider_direction: 1
+    per_joint_tolerance: 24
+  - pose_name: Pose 8
+    upper_arm_sprite: {fileID: 5979337712880841701, guid: 13e4a02b03846e843a195bfb6e1905ab, type: 3}
+    forearm_sprite: {fileID: 6671147490544697867, guid: 1b702af4af43b614a8cd2bb72c9f0ce3, type: 3}
+    hand_sprite: {fileID: 2105304690372799853, guid: 6d1ff36885da3894f95573206cf5693b, type: 3}
+    upper_arm_z: 93.429886
+    forearm_z: 64.71415
+    hand_z: 302.9865
+    collider_offset: {x: 0.0038670297, y: 0.17004614}
+    collider_size: {x: 0.7729751, y: 0.5721763}
+    collider_direction: 1
+    per_joint_tolerance: 24
+  - pose_name: Pose 9
+    upper_arm_sprite: {fileID: -5610770521457871929, guid: ccd78b2664e9a204fb50a3271533ac0b, type: 3}
+    forearm_sprite: {fileID: 8773093135767091644, guid: ed3090f9e5b904d4d9d9c9af956908f4, type: 3}
+    hand_sprite: {fileID: -6659826146745299651, guid: 8ab60aeeaad1fe6488a2f74d0ced58b4, type: 3}
+    upper_arm_z: 107.077965
+    forearm_z: 82.014984
+    hand_z: 290.44962
+    collider_offset: {x: 0.0038669962, y: 0.1998646}
+    collider_size: {x: 0.77297497, y: 0.66386515}
+    collider_direction: 1
+    per_joint_tolerance: 24
+  - pose_name: Pose 10
+    upper_arm_sprite: {fileID: 5432673994934100513, guid: fb133f831097f734e87cbae1d7178bbe, type: 3}
+    forearm_sprite: {fileID: 3579655328416065290, guid: 711d59ccd24c13d4db5c38f154ba30d5, type: 3}
+    hand_sprite: {fileID: 4898870863306898812, guid: 483198962f1d79d4994d6d36055c74d4, type: 3}
+    upper_arm_z: 355.41592
+    forearm_z: 129.87381
+    hand_z: 277.53464
+    collider_offset: {x: -0.0042172256, y: -0.6494072}
+    collider_size: {x: 0.65090793, y: 0.52861434}
+    collider_direction: 1
+    per_joint_tolerance: 12
+  - pose_name: Pose 11
+    upper_arm_sprite: {fileID: 8412297705826135122, guid: a916ee4cc6d22ec4f94b7ed452258ead, type: 3}
+    forearm_sprite: {fileID: 8329764028924224238, guid: 0fbe46a1713c27d489a045e7f8f97368, type: 3}
+    hand_sprite: {fileID: -8696079286912176904, guid: e5d73f7d820e39e4ab24d23a8e5b0db1, type: 3}
+    upper_arm_z: 87.119225
+    forearm_z: 106.7273
+    hand_z: 279.96954
+    collider_offset: {x: -0.006477224, y: -0.25709528}
+    collider_size: {x: 0.7514088, y: 0.45346093}
+    collider_direction: 1
+    per_joint_tolerance: 12
+  - pose_name: Pose 12
+    upper_arm_sprite: {fileID: 5979337712880841701, guid: 13e4a02b03846e843a195bfb6e1905ab, type: 3}
+    forearm_sprite: {fileID: 6671147490544697867, guid: 1b702af4af43b614a8cd2bb72c9f0ce3, type: 3}
+    hand_sprite: {fileID: 2105304690372799853, guid: 6d1ff36885da3894f95573206cf5693b, type: 3}
+    upper_arm_z: 109.87361
+    forearm_z: 86.08772
+    hand_z: 289.13852
+    collider_offset: {x: 0.0016471887, y: 0.16778094}
+    collider_size: {x: 0.86663103, y: 0.6564632}
+    collider_direction: 1
+    per_joint_tolerance: 12

@@ -1,0 +1,158 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8cd599754f35d344ac29e1cf9821d1e, type: 3}
+  m_Name: ChargoUp
+  m_EditorClassIdentifier: Assembly-CSharp::ArmPoseLibrary
+  keys:
+  - pose_name: Pose 0
+    upper_arm_sprite: {fileID: 0}
+    forearm_sprite: {fileID: 0}
+    hand_sprite: {fileID: -1604432152492677186, guid: 060a4d3ec71fe264fb60c521ae2bafed, type: 3}
+    upper_arm_z: 13.63834
+    forearm_z: 354.12546
+    hand_z: 315.21573
+    collider_offset: {x: -0.0042172256, y: -0.6494072}
+    collider_size: {x: 0.65090793, y: 0.52861434}
+    collider_direction: 1
+    per_joint_tolerance: 24
+  - pose_name: Pose 1
+    upper_arm_sprite: {fileID: 0}
+    forearm_sprite: {fileID: 0}
+    hand_sprite: {fileID: 2560527404939401694, guid: a472cbe25a75f1140bcf3769e0790c07, type: 3}
+    upper_arm_z: 48.28041
+    forearm_z: 354.12546
+    hand_z: 315.21573
+    collider_offset: {x: 0.025054706, y: -0.58001184}
+    collider_size: {x: 0.7094536, y: 0.46164784}
+    collider_direction: 1
+    per_joint_tolerance: 24
+  - pose_name: Pose 2
+    upper_arm_sprite: {fileID: 0}
+    forearm_sprite: {fileID: 0}
+    hand_sprite: {fileID: -602164699065954902, guid: f73b2916dda4b7742aabddf46d8eca7d, type: 3}
+    upper_arm_z: 78.203575
+    forearm_z: 354.12546
+    hand_z: 315.21573
+    collider_offset: {x: -0.08996428, y: -0.21778071}
+    collider_size: {x: 0.7143447, y: 0.48823807}
+    collider_direction: 1
+    per_joint_tolerance: 24
+  - pose_name: Pose 3
+    upper_arm_sprite: {fileID: 0}
+    forearm_sprite: {fileID: 0}
+    hand_sprite: {fileID: 5790012268013461575, guid: 646fe118eeaeaa04385f05343a9004f9, type: 3}
+    upper_arm_z: 115.30939
+    forearm_z: 354.13364
+    hand_z: 315.20425
+    collider_offset: {x: 0.011478886, y: 0.17346808}
+    collider_size: {x: 0.7915633, y: 0.56119096}
+    collider_direction: 1
+    per_joint_tolerance: 24
+  - pose_name: Pose 4
+    upper_arm_sprite: {fileID: 0}
+    forearm_sprite: {fileID: 0}
+    hand_sprite: {fileID: -2676738163929265068, guid: 91c4546789088d947932833de759db5a, type: 3}
+    upper_arm_z: 137.55212
+    forearm_z: 354.12546
+    hand_z: 315.21573
+    collider_offset: {x: -0.0081529, y: 0.22075348}
+    collider_size: {x: 0.7237439, y: 0.6377811}
+    collider_direction: 1
+    per_joint_tolerance: 24
+  - pose_name: Pose 5
+    upper_arm_sprite: {fileID: 0}
+    forearm_sprite: {fileID: 0}
+    hand_sprite: {fileID: -1604432152492677186, guid: 060a4d3ec71fe264fb60c521ae2bafed, type: 3}
+    upper_arm_z: 351.1346
+    forearm_z: 87.59577
+    hand_z: 290.03958
+    collider_offset: {x: -0.0042172256, y: -0.6494072}
+    collider_size: {x: 0.65090793, y: 0.52861434}
+    collider_direction: 1
+    per_joint_tolerance: 24
+  - pose_name: Pose 6
+    upper_arm_sprite: {fileID: 0}
+    forearm_sprite: {fileID: 0}
+    hand_sprite: {fileID: 2560527404939401694, guid: a472cbe25a75f1140bcf3769e0790c07, type: 3}
+    upper_arm_z: 27.683128
+    forearm_z: 87.24202
+    hand_z: 290.61423
+    collider_offset: {x: 0.020916544, y: -0.5406552}
+    collider_size: {x: 0.7011726, y: 0.49555856}
+    collider_direction: 1
+    per_joint_tolerance: 24
+  - pose_name: Pose 7
+    upper_arm_sprite: {fileID: 0}
+    forearm_sprite: {fileID: 0}
+    hand_sprite: {fileID: -602164699065954902, guid: f73b2916dda4b7742aabddf46d8eca7d, type: 3}
+    upper_arm_z: 64.502785
+    forearm_z: 72.95818
+    hand_z: 298.6957
+    collider_offset: {x: 0.015707066, y: -0.25038165}
+    collider_size: {x: 0.7440335, y: 0.45364156}
+    collider_direction: 1
+    per_joint_tolerance: 24
+  - pose_name: Pose 8
+    upper_arm_sprite: {fileID: 0}
+    forearm_sprite: {fileID: 0}
+    hand_sprite: {fileID: 5790012268013461575, guid: 646fe118eeaeaa04385f05343a9004f9, type: 3}
+    upper_arm_z: 93.429886
+    forearm_z: 64.71415
+    hand_z: 302.9865
+    collider_offset: {x: 0.0038670297, y: 0.17004614}
+    collider_size: {x: 0.7729751, y: 0.5721763}
+    collider_direction: 1
+    per_joint_tolerance: 24
+  - pose_name: Pose 9
+    upper_arm_sprite: {fileID: 0}
+    forearm_sprite: {fileID: 0}
+    hand_sprite: {fileID: -2676738163929265068, guid: 91c4546789088d947932833de759db5a, type: 3}
+    upper_arm_z: 107.077965
+    forearm_z: 82.014984
+    hand_z: 290.44962
+    collider_offset: {x: 0.0038669962, y: 0.1998646}
+    collider_size: {x: 0.77297497, y: 0.66386515}
+    collider_direction: 1
+    per_joint_tolerance: 24
+  - pose_name: Pose 10
+    upper_arm_sprite: {fileID: 0}
+    forearm_sprite: {fileID: 0}
+    hand_sprite: {fileID: -1604432152492677186, guid: 060a4d3ec71fe264fb60c521ae2bafed, type: 3}
+    upper_arm_z: 355.41592
+    forearm_z: 129.87381
+    hand_z: 277.53464
+    collider_offset: {x: -0.0042172256, y: -0.6494072}
+    collider_size: {x: 0.65090793, y: 0.52861434}
+    collider_direction: 1
+    per_joint_tolerance: 12
+  - pose_name: Pose 11
+    upper_arm_sprite: {fileID: 0}
+    forearm_sprite: {fileID: 0}
+    hand_sprite: {fileID: -602164699065954902, guid: f73b2916dda4b7742aabddf46d8eca7d, type: 3}
+    upper_arm_z: 87.119225
+    forearm_z: 106.7273
+    hand_z: 279.96954
+    collider_offset: {x: -0.006477224, y: -0.25709528}
+    collider_size: {x: 0.7514088, y: 0.45346093}
+    collider_direction: 1
+    per_joint_tolerance: 12
+  - pose_name: Pose 12
+    upper_arm_sprite: {fileID: 0}
+    forearm_sprite: {fileID: 0}
+    hand_sprite: {fileID: 5790012268013461575, guid: 646fe118eeaeaa04385f05343a9004f9, type: 3}
+    upper_arm_z: 109.87361
+    forearm_z: 86.08772
+    hand_z: 289.13852
+    collider_offset: {x: 0.0016471887, y: 0.16778094}
+    collider_size: {x: 0.86663103, y: 0.6564632}
+    collider_direction: 1
+    per_joint_tolerance: 12
