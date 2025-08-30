@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c8cd599754f35d344ac29e1cf9821d1e, type: 3}
-  m_Name: D-KLA5
+  m_Name: DKLAUp
   m_EditorClassIdentifier: Assembly-CSharp::ArmPoseLibrary
   keys:
   - pose_name: Pose 0
@@ -42,8 +42,8 @@ MonoBehaviour:
     upper_arm_z: 78.203575
     forearm_z: 354.12546
     hand_z: 315.21573
-    collider_offset: {x: 0.02970068, y: -0.21778071}
-    collider_size: {x: 0.8295445, y: 0.5488589}
+    collider_offset: {x: -0.08996428, y: -0.21778071}
+    collider_size: {x: 0.7143447, y: 0.48823807}
     collider_direction: 1
     per_joint_tolerance: 24
   - pose_name: Pose 3
