@@ -11,6 +11,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Multiplayer.unity
     guid: 0cd4d5adf344fa14487fe8fa04ddb146
+  - enabled: 1
+    path: Assets/Scenes/Arcade.unity
+    guid: f01d90a049594416a87408c3b38345db
+  - enabled: 1
+    path: Assets/Scenes/CharatcerSelectScene_Singleplayer.unity
+    guid: 930d4d3ec27714a97b34ced2c8817731
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0
