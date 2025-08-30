@@ -14,6 +14,8 @@ public sealed class FixedSlotSpawner : MonoBehaviour
         public string characterName;
         public GameObject upPrefabWithPlayerInput;
         public GameObject downPrefabWithPlayerInput;
+        public GameObject upCPUPrefab;
+        public GameObject downCPUPrefab;
     }
 
     [Header("Slot")]
@@ -66,6 +68,15 @@ public sealed class FixedSlotSpawner : MonoBehaviour
     {
         if (logDeviceSurvey)
             Debug.Log($"[{name}] Survey: pads={Gamepad.all.Count} kb={(Keyboard.current!=null)} mouse={(Mouse.current!=null)}");
+
+        // Check if this slot should be CPU controlled
+        bool isCPUPlayer = (slot == Slot.P2) && CharacterSelect.IsP2CPU;
+        
+        if (isCPUPlayer)
+        {
+            SpawnCPUPlayer();
+            return;
+        }
 
         // 1) Pick the prefab
         string chosen = (slot == Slot.P1) ? CharacterSelect.p1_character : CharacterSelect.p2_character;
@@ -232,6 +243,123 @@ public sealed class FixedSlotSpawner : MonoBehaviour
         cleaner.Initialize(pi, devices);
 
         Debug.Log($"[{pi.name}] {slot} -> '{scheme}' | devices: {string.Join(", ", pi.user.pairedDevices.Select(d => d.displayName))}");
+    }
+
+    private void SpawnCPUPlayer()
+    {
+        // 1) Pick the CPU prefab
+        string chosen = CharacterSelect.p2_character;
+        if (string.IsNullOrEmpty(chosen))
+        {
+            Debug.LogWarning($"[{name}] No character chosen for CPU {slot}. Skipping spawn.");
+            return;
+        }
+
+        var entry = characterPrefabs.FirstOrDefault(p => p.characterName == chosen);
+        bool spawnerIsTop = transform.position.y > 0f;
+        
+        // Try to get CPU-specific prefabs first, fallback to regular prefabs
+        GameObject prefab = spawnerIsTop ? entry.downCPUPrefab : entry.upCPUPrefab;
+        if (!prefab) prefab = entry.upCPUPrefab ?? entry.downCPUPrefab;
+        
+        // If no CPU prefabs, use regular prefabs and convert them
+        if (!prefab)
+        {
+            prefab = spawnerIsTop ? entry.downPrefabWithPlayerInput : entry.upPrefabWithPlayerInput;
+            if (!prefab) prefab = entry.upPrefabWithPlayerInput ?? entry.downPrefabWithPlayerInput;
+        }
+        
+        if (!prefab) 
+        { 
+            Debug.LogError($"[{name}] No prefab mapped for CPU '{chosen}'"); 
+            return; 
+        }
+
+        // 2) Instantiate the CPU player
+        GameObject cpuInstance = Instantiate(prefab);
+        
+        if (spawnPoint) 
+            cpuInstance.transform.SetPositionAndRotation(spawnPoint.position, spawnPoint.rotation);
+
+        // 3) Convert to CPU if it's a regular player prefab
+        ConvertToCPUPlayer(cpuInstance);
+
+        // 4) Set up CPU-specific components
+        SetupCPUComponents(cpuInstance);
+
+        Debug.Log($"[{cpuInstance.name}] CPU {slot} spawned for character '{chosen}'");
+    }
+
+    private void ConvertToCPUPlayer(GameObject playerInstance)
+    {
+        // Remove or disable PlayerInput if present
+        var playerInput = playerInstance.GetComponent<PlayerInput>();
+        if (playerInput != null)
+        {
+            playerInput.enabled = false;
+            // Don't destroy it completely as other components might reference it
+        }
+
+        // Remove or disable PlayerMovement if present
+        var playerMovement = playerInstance.GetComponent<PlayerMovement>();
+        if (playerMovement != null)
+        {
+            playerMovement.enabled = false;
+        }
+
+        // Remove or disable PingPongMovement if present (fixes null move action warnings)
+        var pingPongMovement = playerInstance.GetComponent<PingPongMovement>();
+        if (pingPongMovement != null)
+        {
+            pingPongMovement.enabled = false;
+        }
+
+        // Add CPU components if not already present
+        if (playerInstance.GetComponent<CPUPlayer>() == null)
+        {
+            playerInstance.AddComponent<CPUPlayer>();
+        }
+
+        if (playerInstance.GetComponent<CPUMovement>() == null)
+        {
+            playerInstance.AddComponent<CPUMovement>();
+        }
+    }
+
+    private void SetupCPUComponents(GameObject playerInstance)
+    {
+        // Configure CPUPlayer
+        var cpuPlayer = playerInstance.GetComponent<CPUPlayer>();
+        if (cpuPlayer != null)
+        {
+            cpuPlayer.difficulty = CharacterSelect.GetCPUDifficulty;
+            
+            // Auto-find references
+            cpuPlayer.ball = FindFirstObjectByType<BallPhysics2D>();
+            cpuPlayer.cpu_movement = playerInstance.GetComponent<CPUMovement>();
+            cpuPlayer.player_owner = playerInstance.GetComponent<PlayerOwner>();
+
+            // Ensure PlayerOwner is set correctly for P2
+            if (cpuPlayer.player_owner != null)
+            {
+                cpuPlayer.player_owner.player_id = PlayerId.P2;
+            }
+        }
+
+        // Configure CPUMovement 
+        var cpuMovement = playerInstance.GetComponent<CPUMovement>();
+        if (cpuMovement != null)
+        {
+            // Copy movement parameters from PlayerMovement if available
+            var originalMovement = playerInstance.GetComponent<PlayerMovement>();
+            if (originalMovement != null)
+            {
+                cpuMovement.max_speed = originalMovement.max_speed;
+                cpuMovement.acceleration = originalMovement.acceleration;
+                cpuMovement.deceleration = originalMovement.deceleration;
+                cpuMovement.ping_pong_target = originalMovement.ping_pong_target;
+            }
+        }
     }
 
     public sealed class InputCleanup : MonoBehaviour
