@@ -10,7 +10,7 @@ public static class CharacterSelect
 
     private static string singleplayerScene = "Arcade";
     private static string multiplayerScene = "Multiplayer";
-    public static bool is_singleplayer = true;
+    public static bool is_singleplayer = false;
     
     // CPU player settings for single player mode
     public static bool p2_is_cpu = false;
