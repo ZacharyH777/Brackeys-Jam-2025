@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: c6537571f2dbfd1449c7121d4f99a94f
+guid: f04cb2eb8b4278f4785dbc3866f1c5a7
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 3737883675313025947
-    second: dojofloor_0
+      213: -3580025355148520976
+    second: DKLA5_Forearm3_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -40,9 +40,9 @@ TextureImporter:
     filterMode: 1
     aniso: 1
     mipBias: 0
-    wrapU: 0
-    wrapV: 0
-    wrapW: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
@@ -139,13 +139,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: dojofloor_0
+      name: DKLA5_Forearm3_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 2048
-        height: 2048
+        x: 83
+        y: 112
+        width: 75
+        height: 23
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -154,8 +154,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b93b3c60661afd330800000000000000
-      internalID: 3737883675313025947
+      spriteID: 0f11b7348e1315ec0800000000000000
+      internalID: -3580025355148520976
       vertices: []
       indices: 
       edges: []
@@ -174,7 +174,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      dojofloor_0: 3737883675313025947
+      DKLA5_Forearm3_0: -3580025355148520976
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

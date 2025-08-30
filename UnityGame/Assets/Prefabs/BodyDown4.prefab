@@ -1182,7 +1182,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement2D
   player_input: {fileID: 0}
+  late_bind_player_input: 1
+  late_bind_interval: 0.25
+  _debugServe: 0
   ping_pong_target: {fileID: 9063310741268328665}
+  player_owner: {fileID: 6085021472045792417}
   max_speed: 8
   acceleration: 40
   deceleration: 80
@@ -1190,6 +1194,9 @@ MonoBehaviour:
   move_action_name: Move
   fetch_from_player_input_if_null: 0
   invert_controls: 1
+  serve_action_ref: {fileID: -5168518866479975279, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  serve_action_name: Serve
+  serve_device_fallback: 1
 --- !u!70 &3357497223190291272
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -1295,6 +1302,9 @@ GameObject:
   - component: {fileID: 7115635153780660497}
   - component: {fileID: 6838692914988177115}
   - component: {fileID: 4177649443493576823}
+  - component: {fileID: 6085021472045792417}
+  - component: {fileID: 3730073080550532394}
+  - component: {fileID: 4828180785490175667}
   m_Layer: 0
   m_Name: Hand
   m_TagString: Untagged
@@ -1412,3 +1422,44 @@ CapsuleCollider2D:
   m_Offset: {x: 0.000000076784765, y: -0.64411736}
   m_Size: {x: 0.6272797, y: 0.51361674}
   m_Direction: 1
+--- !u!114 &6085021472045792417
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8732309570792264332}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c94e7168d867f54d9db5b663c339618, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerOwner
+  player_id: 1
+--- !u!114 &3730073080550532394
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8732309570792264332}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2329d67643dd484da7a0346e4c9d33c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PaddleKinematics
+  rigidbody2d_body: {fileID: 93709462141461849}
+  rigidbody2d_arm: {fileID: 8739448746415924950}
+  current_velocity: {x: 0, y: 0}
+--- !u!114 &4828180785490175667
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8732309570792264332}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50d9841d0b73777458728ffc7698a434, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SurfaceZone
+  zone_type: 2

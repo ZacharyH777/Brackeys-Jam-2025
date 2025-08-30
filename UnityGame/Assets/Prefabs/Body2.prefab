@@ -886,6 +886,8 @@ GameObject:
   - component: {fileID: 4325474421241347192}
   - component: {fileID: 3899034570484438526}
   - component: {fileID: 2313194032221581124}
+  - component: {fileID: 7372746042321942264}
+  - component: {fileID: 6318713299228933966}
   m_Layer: 0
   m_Name: Hand
   m_TagString: Untagged
@@ -1003,6 +1005,34 @@ CapsuleCollider2D:
   m_Offset: {x: 0.028509583, y: -0.14598157}
   m_Size: {x: 0.6276845, y: 0.5232522}
   m_Direction: 1
+--- !u!114 &7372746042321942264
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7212850214102561590}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c94e7168d867f54d9db5b663c339618, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerOwner
+  player_id: 0
+--- !u!114 &6318713299228933966
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7212850214102561590}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2329d67643dd484da7a0346e4c9d33c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PaddleKinematics
+  rigidbody2d_body: {fileID: 3145177995985329737}
+  rigidbody2d_arm: {fileID: 3183279591712726913}
+  current_velocity: {x: 0, y: 0}
 --- !u!1 &7572480420578293222
 GameObject:
   m_ObjectHideFlags: 0
@@ -1409,7 +1439,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement2D
   player_input: {fileID: 0}
+  late_bind_player_input: 1
+  late_bind_interval: 0.25
+  _debugServe: 0
   ping_pong_target: {fileID: 6689003785093839585}
+  player_owner: {fileID: 7372746042321942264}
   max_speed: 12
   acceleration: 60
   deceleration: 80
@@ -1417,6 +1451,9 @@ MonoBehaviour:
   move_action_name: Move
   fetch_from_player_input_if_null: 0
   invert_controls: 0
+  serve_action_ref: {fileID: -5168518866479975279, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  serve_action_name: Serve
+  serve_device_fallback: 1
 --- !u!70 &1119848369292751174
 CapsuleCollider2D:
   m_ObjectHideFlags: 0

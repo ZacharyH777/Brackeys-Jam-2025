@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 8213065547531799235}
   - component: {fileID: 3660052528706628136}
   - component: {fileID: 3807491980248931907}
+  - component: {fileID: 2232386856449133807}
   m_Layer: 0
   m_Name: Body3
   m_TagString: Untagged
@@ -132,7 +133,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement2D
   player_input: {fileID: 0}
+  late_bind_player_input: 1
+  late_bind_interval: 0.25
+  _debugServe: 0
   ping_pong_target: {fileID: 8880446845215897422}
+  player_owner: {fileID: 3009838046013446498}
   max_speed: 8
   acceleration: 40
   deceleration: 80
@@ -140,6 +145,9 @@ MonoBehaviour:
   move_action_name: Move
   fetch_from_player_input_if_null: 0
   invert_controls: 0
+  serve_action_ref: {fileID: -5168518866479975279, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  serve_action_name: Serve
+  serve_device_fallback: 1
 --- !u!70 &3660052528706628136
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -207,6 +215,33 @@ MonoBehaviour:
   m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 6075963741899048267}
+--- !u!114 &2232386856449133807
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1313185823094702208}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9c78fed504ac2a48b8018efe115cc8b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArmPoseDriver
+  upper_arm_renderer: {fileID: 5511534666198443027}
+  forearm_renderer: {fileID: 6641536836443230264}
+  hand_renderer: {fileID: 5965420065402167834}
+  upper_arm_joint: {fileID: 3595337587327871441}
+  forearm_joint: {fileID: 8010869670679117967}
+  hand_joint: {fileID: 3245377615566651190}
+  collider_bounds: {fileID: 1687083789655884940}
+  library: {fileID: 11400000, guid: b437348b49d87714cb135ae548bc6c76, type: 2}
+  mode: 1
+  driver_joint: 2
+  wrap_sequence: 1
+  hysteresis_degrees: 3
+  default_per_joint_tolerance: 12
+  apply_first_on_start: 1
+  update_continuously: 1
 --- !u!1 &1751780162472998129
 GameObject:
   m_ObjectHideFlags: 0
@@ -659,6 +694,9 @@ GameObject:
   - component: {fileID: 132555735435736551}
   - component: {fileID: 5965420065402167834}
   - component: {fileID: 1687083789655884940}
+  - component: {fileID: 3009838046013446498}
+  - component: {fileID: 2067927524099818902}
+  - component: {fileID: 8961478959470316728}
   m_Layer: 0
   m_Name: Hand
   m_TagString: Untagged
@@ -776,6 +814,47 @@ CapsuleCollider2D:
   m_Offset: {x: -0.0042172256, y: -0.6494072}
   m_Size: {x: 0.65090793, y: 0.52861434}
   m_Direction: 1
+--- !u!114 &3009838046013446498
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2718063957933795402}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c94e7168d867f54d9db5b663c339618, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerOwner
+  player_id: 0
+--- !u!114 &2067927524099818902
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2718063957933795402}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50d9841d0b73777458728ffc7698a434, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SurfaceZone
+  zone_type: 2
+--- !u!114 &8961478959470316728
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2718063957933795402}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2329d67643dd484da7a0346e4c9d33c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PaddleKinematics
+  rigidbody2d_body: {fileID: 5050558614612602652}
+  rigidbody2d_arm: {fileID: 2993271506611790527}
+  current_velocity: {x: 0, y: 0}
 --- !u!1 &3519746946988345951
 GameObject:
   m_ObjectHideFlags: 0

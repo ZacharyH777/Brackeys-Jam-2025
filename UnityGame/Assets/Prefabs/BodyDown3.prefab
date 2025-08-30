@@ -102,6 +102,9 @@ GameObject:
   - component: {fileID: 3444443623858313230}
   - component: {fileID: 8352962745788504431}
   - component: {fileID: 3831367532446279863}
+  - component: {fileID: 7360751790067248860}
+  - component: {fileID: 5818461428580208548}
+  - component: {fileID: 4573172802325439289}
   m_Layer: 0
   m_Name: Hand
   m_TagString: Untagged
@@ -219,6 +222,47 @@ CapsuleCollider2D:
   m_Offset: {x: 0.000000076784765, y: -0.64411736}
   m_Size: {x: 0.6272797, y: 0.51361674}
   m_Direction: 1
+--- !u!114 &7360751790067248860
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 878456910971336497}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c94e7168d867f54d9db5b663c339618, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerOwner
+  player_id: 1
+--- !u!114 &5818461428580208548
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 878456910971336497}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2329d67643dd484da7a0346e4c9d33c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PaddleKinematics
+  rigidbody2d_body: {fileID: 0}
+  rigidbody2d_arm: {fileID: 0}
+  current_velocity: {x: 0, y: 0}
+--- !u!114 &4573172802325439289
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 878456910971336497}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50d9841d0b73777458728ffc7698a434, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SurfaceZone
+  zone_type: 2
 --- !u!1 &2206087228048913743
 GameObject:
   m_ObjectHideFlags: 0
@@ -361,6 +405,7 @@ GameObject:
   - component: {fileID: 7303418562011520759}
   - component: {fileID: 7988898621419958054}
   - component: {fileID: 3356239199223735686}
+  - component: {fileID: 5803245491267924668}
   m_Layer: 0
   m_Name: BodyDown3
   m_TagString: Untagged
@@ -479,7 +524,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement2D
   player_input: {fileID: 0}
+  late_bind_player_input: 1
+  late_bind_interval: 0.25
+  _debugServe: 0
   ping_pong_target: {fileID: 2832320680258442777}
+  player_owner: {fileID: 7360751790067248860}
   max_speed: 8
   acceleration: 40
   deceleration: 80
@@ -487,6 +536,9 @@ MonoBehaviour:
   move_action_name: Move
   fetch_from_player_input_if_null: 0
   invert_controls: 1
+  serve_action_ref: {fileID: -5168518866479975279, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  serve_action_name: Serve
+  serve_device_fallback: 1
 --- !u!70 &7988898621419958054
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -554,6 +606,33 @@ MonoBehaviour:
   m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 4933474498959783655}
+--- !u!114 &5803245491267924668
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2482280193210528136}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9c78fed504ac2a48b8018efe115cc8b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArmPoseDriver
+  upper_arm_renderer: {fileID: 1704834295127372913}
+  forearm_renderer: {fileID: 1305288226778593741}
+  hand_renderer: {fileID: 8352962745788504431}
+  upper_arm_joint: {fileID: 1338108939148787368}
+  forearm_joint: {fileID: 484182630550572755}
+  hand_joint: {fileID: 4197364580236276492}
+  collider_bounds: {fileID: 3831367532446279863}
+  library: {fileID: 11400000, guid: b437348b49d87714cb135ae548bc6c76, type: 2}
+  mode: 1
+  driver_joint: 2
+  wrap_sequence: 1
+  hysteresis_degrees: 3
+  default_per_joint_tolerance: 12
+  apply_first_on_start: 1
+  update_continuously: 1
 --- !u!1 &3928649721049663758
 GameObject:
   m_ObjectHideFlags: 0

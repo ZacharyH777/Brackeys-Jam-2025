@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 8127547498030717892}
   - component: {fileID: 1976755778908552870}
   - component: {fileID: 4607089625975325574}
+  - component: {fileID: 6023987155574296583}
   m_Layer: 0
   m_Name: Hand
   m_TagString: Untagged
@@ -158,6 +159,19 @@ MonoBehaviour:
   rigidbody2d_body: {fileID: 966616562959105351}
   rigidbody2d_arm: {fileID: 5656270128793274344}
   current_velocity: {x: 0, y: 0}
+--- !u!114 &6023987155574296583
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1871201903717522852}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c94e7168d867f54d9db5b663c339618, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerOwner
+  player_id: 1
 --- !u!1 &2387260503519057898
 GameObject:
   m_ObjectHideFlags: 0
@@ -604,6 +618,7 @@ GameObject:
   - component: {fileID: 252925842392529610}
   - component: {fileID: 8286654755858371130}
   - component: {fileID: 2070942009975249790}
+  - component: {fileID: 7128556081836493988}
   m_Layer: 0
   m_Name: BodyDown
   m_TagString: Untagged
@@ -722,7 +737,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement2D
   player_input: {fileID: 0}
+  late_bind_player_input: 1
+  late_bind_interval: 0.25
+  _debugServe: 1
   ping_pong_target: {fileID: 8650498919853075864}
+  player_owner: {fileID: 6023987155574296583}
   max_speed: 15
   acceleration: 60
   deceleration: 80
@@ -730,6 +749,9 @@ MonoBehaviour:
   move_action_name: Move
   fetch_from_player_input_if_null: 0
   invert_controls: 1
+  serve_action_ref: {fileID: -5168518866479975279, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  serve_action_name: Serve
+  serve_device_fallback: 1
 --- !u!70 &8286654755858371130
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -797,6 +819,33 @@ MonoBehaviour:
   m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 1651900578475482589}
+--- !u!114 &7128556081836493988
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4479925921038309657}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9c78fed504ac2a48b8018efe115cc8b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArmPoseDriver
+  upper_arm_renderer: {fileID: 2575074190829795197}
+  forearm_renderer: {fileID: 2555944725357232349}
+  hand_renderer: {fileID: 7533027170385355716}
+  upper_arm_joint: {fileID: 5012742120103470583}
+  forearm_joint: {fileID: 6313407066291235735}
+  hand_joint: {fileID: 1509382169386514493}
+  collider_bounds: {fileID: 8127547498030717892}
+  library: {fileID: 11400000, guid: df9badf0c2a929c46a5f5845c001efcf, type: 2}
+  mode: 1
+  driver_joint: 2
+  wrap_sequence: 1
+  hysteresis_degrees: 3
+  default_per_joint_tolerance: 12
+  apply_first_on_start: 1
+  update_continuously: 1
 --- !u!1 &5428553578503741288
 GameObject:
   m_ObjectHideFlags: 0

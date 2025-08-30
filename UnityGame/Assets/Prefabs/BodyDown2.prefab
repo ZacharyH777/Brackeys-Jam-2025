@@ -572,6 +572,7 @@ GameObject:
   - component: {fileID: 28835874389204360}
   - component: {fileID: 6674369619242921994}
   - component: {fileID: 5605174305057071326}
+  - component: {fileID: 4091556266546645656}
   m_Layer: 0
   m_Name: Hand
   m_TagString: Untagged
@@ -689,6 +690,19 @@ CapsuleCollider2D:
   m_Offset: {x: 0.02583748, y: -0.14249292}
   m_Size: {x: 0.62983847, y: 0.5128673}
   m_Direction: 1
+--- !u!114 &4091556266546645656
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3804196942201893956}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c94e7168d867f54d9db5b663c339618, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerOwner
+  player_id: 1
 --- !u!1 &4077699888358268002
 GameObject:
   m_ObjectHideFlags: 0
@@ -912,7 +926,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement2D
   player_input: {fileID: 0}
+  late_bind_player_input: 1
+  late_bind_interval: 0.25
+  _debugServe: 0
   ping_pong_target: {fileID: 6721406734732056836}
+  player_owner: {fileID: 4091556266546645656}
   max_speed: 12
   acceleration: 60
   deceleration: 80
@@ -920,6 +938,9 @@ MonoBehaviour:
   move_action_name: Move
   fetch_from_player_input_if_null: 0
   invert_controls: 1
+  serve_action_ref: {fileID: -5168518866479975279, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  serve_action_name: Serve
+  serve_device_fallback: 1
 --- !u!70 &5843963467481695659
 CapsuleCollider2D:
   m_ObjectHideFlags: 0

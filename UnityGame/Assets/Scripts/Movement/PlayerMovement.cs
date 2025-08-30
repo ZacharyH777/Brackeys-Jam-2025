@@ -1,35 +1,65 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+[DisallowMultipleComponent]
 [RequireComponent(typeof(Rigidbody2D))]
-public class PlayerMovement : MonoBehaviour
+public sealed class PlayerMovement : MonoBehaviour
 {
-    [Header("Owner")]
-    public PlayerInput player_input;
+    [Header("Owner / Input")]
+    [Tooltip("PlayerInput is provided by the spawner later; we bind when it arrives.")]
+    public PlayerInput player_input; // can be null at Awake; we late-bind
+    [Tooltip("If true, we periodically look up PlayerInput again until found.")]
+    public bool late_bind_player_input = true;
+    [Tooltip("Seconds between late-bind checks for PlayerInput.")]
+    public float late_bind_interval = 0.25f;
+
+    private int _lastServeFireFrame = -1;
+    [SerializeField] private bool _debugServe = false;
 
     [Header("Targets")]
-    [Tooltip("Target uses same PlayerInput clone")]
+    [Tooltip("Receives the PlayerInput clone when available.")]
     public PingPongMovement ping_pong_target;
+
+    public PlayerOwner player_owner;
 
     [Header("Movement")]
     public float max_speed = 12f;
     public float acceleration = 60f;
     public float deceleration = 80f;
 
-    [Header("Input")]
-    [Tooltip("Action reference used for mapping by id")]
+    [Header("Input (Move)")]
+    [Tooltip("Prefer: assign the Move action here. We'll resolve by ID in the cloned asset.")]
     public InputActionReference move_action_ref;
     public string move_action_name = "Move";
     public bool fetch_from_player_input_if_null = true;
-    [Tooltip("Invert controls")]
+    [Tooltip("Invert XY input.")]
     public bool invert_controls = false;
 
+    [Header("Input (Serve)")]
+    [Tooltip("Optional dedicated Serve action (Keyboard Space + Gamepad South/A). Resolved by ID from the cloned asset.")]
+    public InputActionReference serve_action_ref;
+    [Tooltip("Fallback name if no reference is provided or ID lookup fails.")]
+    public string serve_action_name = "Serve";
+    [Tooltip("If true and Serve action isn't found, poll this player's devices for Space/A.")]
+    public bool serve_device_fallback = true;
+
     private Rigidbody2D rigidbody2d;
+
+    // actions
     private InputAction move_action;
+    private InputAction serve_action;
+
+    // cached inputs
     private Vector2 move_input;
 
+    // serve edge-detect
+    private bool serve_prev_pressed;
+
+    // late-bind timer
+    private float next_bind_check_time;
+
     /*
-    Ensure rigidbody2d is configured and a PlayerInput is available.
+    Ensure rigidbody2d is configured.
     */
     void Awake()
     {
@@ -46,18 +76,15 @@ public class PlayerMovement : MonoBehaviour
 #endif
         rigidbody2d.constraints = RigidbodyConstraints2D.FreezeRotation;
 
+        // Try an initial grab; spawner may provide it later.
         if (player_input == null)
         {
-            player_input = GetComponent<PlayerInput>();
-            if (player_input == null)
-            {
-                player_input = GetComponentInParent<PlayerInput>();
-            }
+            player_input = GetComponent<PlayerInput>() ?? GetComponentInParent<PlayerInput>();
         }
     }
 
     /*
-    Subscribe to control changes and bind actions.
+    Subscribe to control changes and bind actions if already present.
     */
     void OnEnable()
     {
@@ -65,11 +92,11 @@ public class PlayerMovement : MonoBehaviour
         {
             player_input.onControlsChanged += OnControlsChanged;
         }
-        BindInput();
+        BindInput(); // safe if player_input is still null; we late-bind in Update too
     }
 
     /*
-    Unsubscribe and unbind when disabled.
+    Unsubscribe and unbind.
     */
     void OnDisable()
     {
@@ -82,26 +109,26 @@ public class PlayerMovement : MonoBehaviour
 
     /*
     Rebind when the control scheme or devices change.
-    @param changed_input The PlayerInput that changed.
     */
     private void OnControlsChanged(PlayerInput changed_input)
     {
+        // Re-resolve actions from the (possibly new) cloned asset
         BindInput();
     }
 
     /*
-    Resolve and enable the move action from the PlayerInput or the reference.
+    Try to resolve Move and Serve actions from the PlayerInput's cloned actions asset.
+    Will also hand the PlayerInput to ping_pong_target once.
     */
     private void BindInput()
     {
+        // Clear previous bindings first
         UnbindInput();
 
-        InputActionAsset action_asset = null;
-        if (player_input != null)
-        {
-            action_asset = player_input.actions;
-        }
+        // If the spawner hasn't attached PlayerInput yet, we’ll try again in Update
+        InputActionAsset action_asset = (player_input != null) ? player_input.actions : null;
 
+        // --- MOVE ---
         if (action_asset != null)
         {
             if (move_action_ref != null && move_action_ref.action != null)
@@ -114,12 +141,10 @@ public class PlayerMovement : MonoBehaviour
                 move_action = action_asset.FindAction(move_action_name, throwIfNotFound: false);
             }
         }
-        else
+        else if (!fetch_from_player_input_if_null && move_action_ref != null)
         {
-            if (!fetch_from_player_input_if_null && move_action_ref != null)
-            {
-                move_action = move_action_ref.action;
-            }
+            // Absolute fallback (not per-player safe) — only used if explicitly allowed
+            move_action = move_action_ref.action;
         }
 
         if (move_action != null)
@@ -129,24 +154,37 @@ public class PlayerMovement : MonoBehaviour
 
             if (!move_action.enabled)
             {
-                Debug.Log("Enable player movement");
-
                 if (ping_pong_target != null && player_input != null)
                 {
                     ping_pong_target.SetOwner(player_input);
                 }
-
                 move_action.Enable();
             }
         }
-        else
+
+        // --- SERVE ---
+        if (action_asset != null)
         {
-            Debug.LogWarning("Move action not bound. Ensure PlayerInput and matching action");
+            if (serve_action_ref != null && serve_action_ref.action != null)
+            {
+                serve_action = action_asset.FindAction(serve_action_ref.action.id);
+            }
+
+            if (serve_action == null && !string.IsNullOrEmpty(serve_action_name))
+            {
+                serve_action = action_asset.FindAction(serve_action_name, throwIfNotFound: false);
+            }
+        }
+        // no else-fallback here: we prefer per-player device polling until PlayerInput exists
+
+        if (serve_action != null && !serve_action.enabled)
+        {
+            serve_action.Enable();
         }
     }
 
     /*
-    Remove callbacks and clear state.
+    Remove callbacks and clear cached state.
     */
     private void UnbindInput()
     {
@@ -157,39 +195,115 @@ public class PlayerMovement : MonoBehaviour
             move_action = null;
         }
         move_input = Vector2.zero;
+
+        serve_action = null;
+        serve_prev_pressed = false;
     }
 
     /*
-    Cache the latest input vector from the action.
-    @param context Callback context from the Input System.
+    Cache latest move vector.
     */
     private void OnMovePerformed(InputAction.CallbackContext context)
     {
         move_input = context.ReadValue<Vector2>();
     }
 
-    /*
-    Clear the input vector when the action is canceled.
-    @param context Callback context from the Input System.
-    */
     private void OnMoveCanceled(InputAction.CallbackContext context)
     {
         move_input = Vector2.zero;
     }
 
     /*
-    Apply acceleration or deceleration and cap speed while keeping motion stable.
+    Late-bind PlayerInput if the spawner adds it after Awake/OnEnable.
+    Poll Serve, then apply movement in FixedUpdate.
+    */
+    void Update()
+    {
+        // Late-bind PlayerInput & actions
+        if (late_bind_player_input && player_input == null && Time.unscaledTime >= next_bind_check_time)
+        {
+            player_input = GetComponent<PlayerInput>() ?? GetComponentInParent<PlayerInput>();
+            next_bind_check_time = Time.unscaledTime + late_bind_interval;
+
+            if (player_input != null)
+            {
+                player_input.onControlsChanged += OnControlsChanged;
+                // resolve actions now that we have the clone
+                BindInput();
+            }
+        }
+
+        // If PlayerInput exists but Serve action is still null, try resolving once more
+        if (serve_action == null && player_input != null && player_input.actions != null)
+        {
+            if (serve_action_ref != null && serve_action_ref.action != null)
+            {
+                serve_action = player_input.actions.FindAction(serve_action_ref.action.id);
+            }
+            if (serve_action == null && !string.IsNullOrEmpty(serve_action_name))
+            {
+                serve_action = player_input.actions.FindAction(serve_action_name, throwIfNotFound: false);
+            }
+            if (serve_action != null && !serve_action.enabled) serve_action.Enable();
+        }
+
+        // Poll serve (action first; else per-player devices)
+        PollServe();
+    }
+
+    private void PollServe()
+    {
+        // Gate: only one fire per rendered frame, even if we poll in both Update & Fixed
+        int frame = Time.frameCount;
+
+        bool pressedNow = false;
+
+        // Prefer action if available (works with cloned asset)
+        if (serve_action != null)
+        {
+            // IsPressed() is stable across update modes; we do our own edge detection
+            pressedNow = serve_action.IsPressed();
+        }
+        else if (serve_device_fallback && player_input != null)
+        {
+            // Per-player devices only (safe for splitscreen/multiplayer)
+            foreach (var device in player_input.devices)
+            {
+                if (device is Keyboard kb && kb.spaceKey.wasPressedThisFrame) { pressedNow = true; break; }
+                if (device is Gamepad gp && gp.buttonSouth.wasPressedThisFrame) { pressedNow = true; break; } // A / Cross
+            }
+        }
+
+        bool risingEdge = pressedNow && !serve_prev_pressed;
+
+        if (risingEdge && _lastServeFireFrame != frame)
+        {
+            var owner = player_owner;
+            if (owner != null)
+            {
+                if (_debugServe) Debug.Log($"[Serve] Request by {owner.player_id} (frame {frame})");
+                PingPongLoop.RequestServe(owner.player_id);
+                _lastServeFireFrame = frame;
+            }
+            else if (_debugServe)
+            {
+                Debug.LogWarning("[Serve] No PlayerOwner found in parents.");
+            }
+        }
+
+        serve_prev_pressed = pressedNow;
+    }
+
+
+    /*
+    Physics: acceleration/deceleration + cap.
     */
     void FixedUpdate()
     {
         Vector2 input_vector = move_input;
+        if (input_vector.sqrMagnitude > 1f) input_vector = input_vector.normalized;
 
-        if (input_vector.sqrMagnitude > 1f)
-        {
-            input_vector = input_vector.normalized;
-        }
-
-        float delta_time = Time.fixedDeltaTime;
+        float dt = Time.fixedDeltaTime;
 #if UNITY_6000_0_OR_NEWER
         Vector2 current_velocity = rigidbody2d.linearVelocity;
 #else
@@ -198,103 +312,69 @@ public class PlayerMovement : MonoBehaviour
 
         if (invert_controls)
         {
-            ApplyAccelerationFromInputInverted(input_vector, delta_time, current_velocity);
+            ApplyAccelerationFromInput(-input_vector, dt, current_velocity);
         }
         else
         {
-            ApplyAccelerationFromInput(input_vector, delta_time, current_velocity);
+            ApplyAccelerationFromInput(input_vector, dt, current_velocity);
         }
 
+        // Decelerate when idle
         if (input_vector.sqrMagnitude <= 1e-6f)
         {
 #if UNITY_6000_0_OR_NEWER
-            Vector2 velocity_after_accel = rigidbody2d.linearVelocity;
+            Vector2 v = rigidbody2d.linearVelocity;
 #else
-            Vector2 velocity_after_accel = rigidbody2d.velocity;
+            Vector2 v = rigidbody2d.velocity;
 #endif
-            float speed = velocity_after_accel.magnitude;
+            float speed = v.magnitude;
             if (speed > 0f)
             {
-                float new_speed = Mathf.Max(0f, speed - deceleration * delta_time);
+                float new_speed = Mathf.Max(0f, speed - deceleration * dt);
                 if (!Mathf.Approximately(new_speed, speed))
                 {
-                    Vector2 normalized_velocity;
-                    if (speed < 1e-6f)
-                    {
-                        normalized_velocity = velocity_after_accel / 1e-6f;
-                    }
-                    else
-                    {
-                        normalized_velocity = velocity_after_accel / speed;
-                    }
-
-                    Vector2 delta_velocity = (new_speed - speed) * normalized_velocity;
-                    rigidbody2d.AddForce(rigidbody2d.mass * delta_velocity, ForceMode2D.Impulse);
+                    Vector2 n = (speed < 1e-6f) ? (v / 1e-6f) : (v / speed);
+                    Vector2 delta_v = (new_speed - speed) * n;
+                    rigidbody2d.AddForce(rigidbody2d.mass * delta_v, ForceMode2D.Impulse);
                 }
             }
         }
 
+        // Cap max speed
 #if UNITY_6000_0_OR_NEWER
-        Vector2 capped_velocity = rigidbody2d.linearVelocity;
+        Vector2 capped = rigidbody2d.linearVelocity;
 #else
-        Vector2 capped_velocity = rigidbody2d.velocity;
+        Vector2 capped = rigidbody2d.velocity;
 #endif
-        float speed_magnitude = capped_velocity.magnitude;
-
-        if (speed_magnitude > max_speed)
+        float mag = capped.magnitude;
+        if (mag > max_speed)
         {
-            float denom_speed = speed_magnitude;
-            if (denom_speed < 1e-6f)
-            {
-                denom_speed = 1e-6f;
-            }
-            capped_velocity *= (max_speed / denom_speed);
+            float denom = (mag < 1e-6f) ? 1e-6f : mag;
+            capped *= (max_speed / denom);
 #if UNITY_6000_0_OR_NEWER
-            rigidbody2d.linearVelocity = capped_velocity;
+            rigidbody2d.linearVelocity = capped;
 #else
-            rigidbody2d.velocity = capped_velocity;
+            rigidbody2d.velocity = capped;
 #endif
         }
+        PollServe();
     }
 
-    /*
-    Apply acceleration from input using normal controls.
-    @param input_vector Input from user in XY.
-    @param delta_time Fixed delta time.
-    @param current_velocity Current rigidbody velocity.
-    */
-    private void ApplyAccelerationFromInput(Vector2 input_vector, float delta_time, Vector2 current_velocity)
+    private void ApplyAccelerationFromInput(Vector2 input_vector, float dt, Vector2 current_velocity)
     {
-        if (input_vector.sqrMagnitude > 1e-6f)
+        if (input_vector.sqrMagnitude <= 1e-6f) return;
+
+        Vector2 target = input_vector * max_speed;
+        Vector2 delta_v = target - current_velocity;
+        float max_step = acceleration * dt;
+        float delta_mag = delta_v.magnitude;
+
+        if (delta_mag > max_step)
         {
-            Vector2 target_velocity = input_vector * max_speed;
-            Vector2 delta_velocity = target_velocity - current_velocity;
-            float max_step = acceleration * delta_time;
-            float delta_magnitude = delta_velocity.magnitude;
-
-            if (delta_magnitude > max_step)
-            {
-                float denom = delta_magnitude;
-                if (denom < 1e-6f)
-                {
-                    denom = 1e-6f;
-                }
-                delta_velocity *= (max_step / denom);
-            }
-
-            rigidbody2d.AddForce(rigidbody2d.mass * delta_velocity, ForceMode2D.Impulse);
+            float denom = (delta_mag < 1e-6f) ? 1e-6f : delta_mag;
+            delta_v *= (max_step / denom);
         }
-    }
 
-    /*
-    Apply acceleration from input using inverted controls.
-    @param input_vector Input from user in XY.
-    @param delta_time Fixed delta time.
-    @param current_velocity Current rigidbody velocity.
-    */
-    private void ApplyAccelerationFromInputInverted(Vector2 input_vector, float delta_time, Vector2 current_velocity)
-    {
-        Vector2 inverted = -input_vector;
-        ApplyAccelerationFromInput(inverted, delta_time, current_velocity);
+        rigidbody2d.AddForce(rigidbody2d.mass * delta_v, ForceMode2D.Impulse);
     }
 }
