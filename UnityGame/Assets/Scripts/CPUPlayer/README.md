@@ -1,113 +1,292 @@
-# 🎮 CPU Player System - Quick Start Guide
+# CPU Player System
 
-## 🚀 Super Easy Setup (30 seconds)
+A comprehensive AI system for creating intelligent computer-controlled opponents in the Unity ping pong game. This system provides automatic serving, ball tracking, movement, and difficulty-based behavior.
 
-### Step 1: Add CPU Support to Your Scene
-1. Open your Arcade scene
-2. Create an empty GameObject and name it "CPU Setup"
-3. Add the `CPUOneClickSetup` component to it
-4. Click "🚀 Setup CPU Support" in the inspector
-5. Done! Your scene now supports CPU players.
+## Quick Start
 
-### Step 2: Test It
-1. Click "🧪 Test CPU Player" to verify everything works
-2. Press Play and enjoy single player mode against AI!
+### Automatic Setup (Recommended)
 
----
+1. Add `CPUOneClickSetup` component to any GameObject in your scene
+2. Set `autoSetupOnPlay = true` (default)
+3. Press Play - CPU support is configured automatically
+4. The system will convert P2 to CPU in single-player mode
 
-## 📁 Folder Structure
+### Manual Setup
+
+1. Add `CPUPlayer` component to your player GameObject
+2. Add `CPUMovement` component for physics-based movement
+3. Add `PlayerOwner` component and set `player_id` to P2
+4. Assign ball reference in `CPUPlayer.ball` field
+
+## Core Components
+
+### CPUPlayer
+
+Main AI controller that handles decision-making and ball tracking.
+
+```csharp
+public class CPUPlayer : MonoBehaviour
+{
+    public BallPhysics2D ball;           // Ball to track
+    public PlayerOwner player_owner;     // Player identification
+    public CPUMovement cpu_movement;     // Movement controller
+    public CPUDifficulty difficulty;     // AI difficulty level
+}
+```
+
+**Key Features:**
+
+- Ball trajectory prediction
+- Automatic serving with human-like delays
+- Stats-based behavior system
+- Real-time ball tracking and interception
+
+### CPUMovement
+
+Physics-based movement system for CPU players.
+
+```csharp
+public class CPUMovement : MonoBehaviour
+{
+    public float max_speed = 12f;        // Maximum movement speed
+    public float acceleration = 60f;     // Acceleration rate
+    public float movement_smoothing = 0.8f; // Movement smoothing
+}
+```
+
+**Features:**
+
+- Smooth rigidbody-based movement
+- Target position tracking
+- Configurable acceleration and deceleration
+- Integration with animation systems
+
+### StatSystem
+
+Flexible stats management for CPU behavior customization.
+
+```csharp
+// Example usage
+statSystem.SetStatValue("ReactionTime", 0.25f);
+statSystem.SetStatValue("MovementAccuracy", 0.8f);
+```
+
+## Difficulty System
+
+### Built-in Difficulties
+
+- **Easy**: Slower reactions, less accurate (Reaction: 0.4s, Accuracy: 60%)
+- **Medium**: Balanced performance (Reaction: 0.25s, Accuracy: 80%)
+- **Hard**: Fast and precise (Reaction: 0.15s, Accuracy: 95%)
+
+### AI Profiles
+
+Advanced personality system with predefined behaviors:
+
+- **Beginner Bot**: Forgiving AI perfect for learning
+- **Balanced Player**: Even match for most skill levels
+- **Pro Champion**: Maximum difficulty challenge
+- **The Wall**: Defensive specialist focusing on consistency
+- **Power Hitter**: Aggressive attacker taking risks
+- **Learning AI**: Adaptive behavior that adjusts to player skill
+
+## Stats System
+
+### Core AI Stats
+
+| Stat Name           | Description                        | Default Range |
+| ------------------- | ---------------------------------- | ------------- |
+| `ReactionTime`      | Base reaction delay (seconds)      | 0.1 - 2.0     |
+| `MovementAccuracy`  | How precisely AI targets positions | 0.0 - 1.0     |
+| `PredictionTime`    | Ball trajectory lookahead time     | 0.1 - 2.0     |
+| `ServeDelayMin/Max` | Serving delay range                | 0.5 - 10.0    |
+| `ReachableDistance` | Maximum ball chase distance        | 1.0 - 10.0    |
+| `Consistency`       | Overall AI performance stability   | 0.0 - 1.0     |
+
+### Advanced Stats
+
+- `AggressionLevel`: Risk-taking behavior
+- `PatternRecognition`: Ability to learn player patterns
+- `AdaptiveDifficulty`: Dynamic difficulty adjustment
+- `OpponentPredictionAccuracy`: Player behavior prediction
+
+## Architecture
+
+### Decision Making Flow
+
+1. **Ball Tracking**: Continuous position and velocity monitoring
+2. **Prediction**: Calculate ball trajectory using physics
+3. **Decision**: Determine target position based on game state
+4. **Movement**: Send target to CPUMovement component
+5. **Execution**: Physics-based movement to intercept ball
+
+### Serving System
+
+```csharp
+// CPU automatically serves when it's their turn
+public void RequestServe()
+{
+    float delay = Random.Range(serveDelayMin, serveDelayMax);
+    // Schedule serve after human-like delay
+}
+```
+
+### Ball Hitting Requirements
+
+CPU players need these components to hit the ball:
+
+- `PaddleKinematics`: Calculates paddle velocity for realistic physics
+- `SurfaceZone` (Paddle type): Collision detection zones
+- Properly configured rigidbody and colliders
+
+## Configuration
+
+### Stat Presets
+
+Create custom AI behaviors using `StatPreset` ScriptableObjects:
+
+```csharp
+var preset = ScriptableObject.CreateInstance<StatPreset>();
+preset.stats.Add(new StatPreset.PresetStat {
+    name = "ReactionTime",
+    value = 0.3f,
+    minValue = 0.1f,
+    maxValue = 2.0f
+});
+```
+
+### Runtime Modification
+
+```csharp
+// Change difficulty mid-game
+cpuPlayer.difficulty = CPUDifficulty.Hard;
+
+// Apply custom stats
+cpuPlayer.ApplyCustomPreset(myStatPreset);
+
+// Direct stat modification
+cpuPlayer.GetComponent<StatSystem>().SetStatValue("ReactionTime", 0.2f);
+```
+
+## Integration
+
+### Single Player Mode
+
+```csharp
+CharacterSelect.is_singleplayer = true;
+CharacterSelect.p2_is_cpu = true;
+CharacterSelect.cpu_difficulty = CPUDifficulty.Medium;
+```
+
+### Multiplayer Integration
+
+- CPU players can replace human players dynamically
+- Supports multiple CPU players in the same match
+- Automatic device management and input cleanup
+
+### Game Loop Integration
+
+The CPU system integrates with:
+
+- `PingPongLoop`: Serves automatically when notified
+- `BallPhysics2D`: Tracks ball for decision making
+- `FixedSlotSpawner`: Spawns CPU players in appropriate slots
+
+## Testing & Debugging
+
+### Diagnostics
+
+The `CPUOneClickSetup` provides comprehensive diagnostics:
+
+```
+🏓 Testing CPU serving connection...
+✓ CPU Player 'BodyDown(Clone)' with PlayerOwner ID: P2
+🎯 CPU Player 'BodyDown(Clone)' hitting components: PaddleKinematics=True, Paddle Zones=1
+```
+
+### Common Debug Messages
+
+- `"CPU Player P2 will serve in 1.42s"` - Serving scheduled
+- `"CPU Player P2 executing serve now!"` - Serve executed
+- `"Applied AI profile: Balanced Player"` - Profile loaded
+- `"🎯 CPU Player P2 hitting components: PaddleKinematics=True"` - Component check
+
+### Performance Monitoring
+
+- Ball tracking updates every frame
+- Decision making runs at reaction intervals
+- Movement commands sent to physics system
+- Stat changes cached for performance
+
+## Troubleshooting
+
+### CPU Not Serving
+
+- Ensure `PlayerOwner` component exists with correct `player_id`
+- Check `PingPongLoop` is calling `NotifyCPUPlayerIfNeeded()`
+- Verify CPU player has `IsCPUPlayer` returning true
+
+### CPU Not Moving
+
+- Check `CPUMovement` component is attached and enabled
+- Verify ball reference is assigned in `CPUPlayer.ball`
+- Ensure rigidbody is Dynamic and simulated
+
+### CPU Not Hitting Ball
+
+- Verify `PaddleKinematics` component exists in hierarchy
+- Check for `SurfaceZone` components with `ZoneType.Paddle`
+- Ensure colliders are properly configured as triggers
+
+### Performance Issues
+
+- Reduce `PredictionTime` for less lookahead calculation
+- Lower `MovementAccuracy` to reduce precision calculations
+- Disable verbose logging in production builds
+
+## File Structure
 
 ```
 CPUPlayer/
-├── Core/           # Essential components
-│   ├── CPUPlayer.cs        # Main CPU AI logic
-│   ├── CPUMovement.cs      # CPU movement behavior  
-│   └── CPUOneClickSetup.cs # One-click scene setup
-├── Stats/          # AI intelligence system
-│   ├── StatSystem.cs       # Flexible stats framework
-│   ├── StatPreset.cs       # Preset configurations
-│   ├── AIStatPresets.cs    # Pre-made AI personalities
-│   └── AIProfileManager.cs # Profile management
-├── UI/             # User interface components
-│   ├── RuntimeAIStatModifier.cs  # Real-time AI tuning
-│   └── CPUDifficultySelector.cs  # Difficulty picker
-└── Tools/          # Development utilities
-    ├── CPUPrefabGenerator.cs # Auto-generate CPU prefabs
-    └── CPUDebugger.cs        # Debug and test AI
+├── Core/
+│   ├── CPUPlayer.cs                    # Main AI controller
+│   ├── CPUMovement.cs                  # Physics-based movement
+│   ├── CPUOneClickSetup.cs             # Automatic scene setup
+│   └── AIProfileDatabaseCreator.cs     # Profile database creation
+├── Stats/
+│   ├── StatSystem.cs                   # Flexible stats management
+│   ├── StatPreset.cs                   # ScriptableObject for stat configs
+│   ├── AIStatPresets.cs                # Predefined stat configurations
+│   ├── AIProfileManager.cs             # Profile switching and management
+│   └── RuntimeAIStatModifier.cs        # UI for real-time stat adjustment
+├── Tools/
+│   ├── CPUPrefabGenerator.cs           # Utility for creating CPU variants
+│   └── CPUPlayerTester.cs              # Test harness for CPU functionality
+└── Editor/
+    └── AIProfileDatabaseGenerator.cs   # Editor tools for database creation
 ```
 
----
+## API Reference
 
-## 🎯 Quick Commands
+### CPUPlayer Methods
 
-### CPUOneClickSetup Component
-- **🚀 Setup CPU Support**: One-click scene configuration
-- **🧪 Test CPU Player**: Verify CPU functionality
-- **🔄 Reset CPU Setup**: Clear configuration
+- `RequestServe()`: Schedule CPU serve with delay
+- `ApplyCustomPreset(StatPreset preset)`: Apply stat configuration
+- `bool IsCPUPlayer`: Always returns true for identification
 
-### CPUDebugger Component (optional)
-- **Press F1**: Toggle real-time debug display
-- **🔄 Cycle CPU Difficulty**: Test different AI levels
-- **🎲 Apply Random Preset**: Try different AI personalities
-- **📊 Log CPU State**: Detailed console information
+### CPUMovement Methods
 
----
+- `SetTargetPosition(Vector2 target)`: Set movement target
+- `SetMovementSmoothing(float smoothing)`: Adjust movement smoothing
 
-## ⚙️ How It Works
+### StatSystem Methods
 
-1. **CPUOneClickSetup** automatically:
-   - Finds your scene's spawners and game controller
-   - Configures character prefabs for CPU support
-   - Sets up the AI profile system
-   - Enables single player mode
+- `SetStatValue(string name, float value)`: Set stat value
+- `GetStatValue(string name)`: Get current stat value
+- `AddModifier(string stat, float value, type, priority, source)`: Add temporary modifier
 
-2. **CPU Players** use a **stats-based AI system**:
-   - Reaction time, accuracy, prediction, etc.
-   - Easy/Medium/Hard difficulties built-in
-   - Special personalities (Aggressive, Defensive, etc.)
+## Dependencies
 
-3. **Everything is modular**:
-   - Use just the core components if you want simple AI
-   - Add UI components for player customization
-   - Include debug tools for development
-
----
-
-## 🔧 Advanced Usage
-
-### Custom AI Personalities
-```csharp
-// Create your own AI preset
-var customPreset = new StatPreset {
-    presetName = "Lightning Fast",
-    description = "Ultra-quick reactions"
-};
-
-// Apply to any CPU player
-cpuPlayer.ApplyCustomPreset(customPreset);
-```
-
-### Runtime Stat Modification
-```csharp
-// Make CPU faster temporarily
-cpuPlayer.AddStatModifier(AIStatNames.REACTION_TIME, -0.2f, 
-                         StatModifierType.FlatAddition, 100, this);
-```
-
----
-
-## 🐛 Troubleshooting
-
-**"CPU setup failed"**: Make sure your scene has `FixedSlotSpawner` components with P1/P2 slots and character prefabs assigned.
-
-**"No CPU Player found"**: The CPU is only spawned when `CharacterSelect.p2_is_cpu = true` and the scene spawns players.
-
-**"CPU isn't moving"**: Check that the ball physics component exists and the CPU can track it.
-
----
-
-## 🎊 That's It!
-
-Your ping pong game now has intelligent CPU opponents that can play at different skill levels. The system is designed to be simple to integrate but powerful enough for advanced customization.
-
-Happy coding! 🏓
+- Unity Input System (for input handling)
+- Unity Physics 2D (for movement and collision)
+- Game-specific components: `PingPongLoop`, `BallPhysics2D`, `PlayerOwner`
