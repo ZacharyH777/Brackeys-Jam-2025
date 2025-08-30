@@ -201,6 +201,49 @@ public sealed class PingPongLoop : MonoBehaviour
         ClearHitBounceState(); // no last hitter/bounce
 
         if (verbose_logging) Debug.Log($"Waiting for {current_server} to press serve…");
+        
+        // Notify CPU player if it's their turn to serve
+        NotifyCPUPlayerIfNeeded();
+    }
+    
+    private void NotifyCPUPlayerIfNeeded()
+    {
+        // Check if the current server is CPU and notify the appropriate CPU player
+        bool isCPUServer = false;
+        
+        if (current_server == PlayerId.P2 && CharacterSelect.IsP2CPU)
+        {
+            isCPUServer = true;
+        }
+        // Also check for P1 CPU (in case user tests with P1 as CPU)
+        else if (current_server == PlayerId.P1)
+        {
+            // Check if P1 is CPU by looking for CPU player components
+            var cpuPlayers = FindObjectsByType<CPUPlayer>(FindObjectsSortMode.None);
+            foreach (var cpu in cpuPlayers)
+            {
+                if (cpu.player_owner != null && cpu.player_owner.player_id == PlayerId.P1 && cpu.IsCPUPlayer)
+                {
+                    isCPUServer = true;
+                    break;
+                }
+            }
+        }
+        
+        if (isCPUServer)
+        {
+            // Find the CPU player in the scene and request serve
+            var cpuPlayers = FindObjectsByType<CPUPlayer>(FindObjectsSortMode.None);
+            foreach (var cpu in cpuPlayers)
+            {
+                if (cpu.player_owner != null && cpu.player_owner.player_id == current_server && cpu.IsCPUPlayer)
+                {
+                    cpu.RequestServe();
+                    if (verbose_logging) Debug.Log($"Notified CPU Player {current_server} to serve");
+                    break;
+                }
+            }
+        }
     }
 
     private void OnServeRequestFromPlayer(PlayerId requester)
@@ -504,7 +547,7 @@ public sealed class PingPongLoop : MonoBehaviour
     #if UNITY_6000_0_OR_NEWER
         var players = Object.FindObjectsByType<PlayerInput>(FindObjectsSortMode.None);
     #else
-        var players = Object.FindObjectsOfType<PlayerInput>();
+        var players = Object.FindObjectsByType<PlayerInput>(FindObjectsSortMode.None);
     #endif
         foreach (var pi in players)
         {

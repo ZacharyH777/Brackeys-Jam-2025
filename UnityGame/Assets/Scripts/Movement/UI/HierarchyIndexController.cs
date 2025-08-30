@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 [RequireComponent(typeof(PlayerInput))]
 [AddComponentMenu("Utils/Hierarchy Index Controller UI Navigate Select Start")]
@@ -24,6 +26,20 @@ public sealed class HierarchyIndexController : MonoBehaviour
     [Tooltip("Assign start action for game start")]
     public InputActionReference start_game_action_reference;
 
+    [Tooltip("Assign UI cancel")]
+    public InputActionReference cancel_action_reference;
+
+    [Header("Cancel Hold")]
+    [Tooltip("Seconds to hold cancel to go back")]
+    public float cancel_hold_seconds = 3f;
+
+    [Tooltip("Optional scene to load on long cancel")]
+    public string back_out_scene_name = "";
+
+    [Tooltip("Invoked on long cancel when no scene is set")]
+    public UnityEvent on_long_cancel;
+
+    [Header("Navigate Gate")]
     [Tooltip("Deadzone for horizontal navigate decision")]
     [Range(0f, 1f)] public float horizontal_deadzone = 0.5f;
 
@@ -41,13 +57,19 @@ public sealed class HierarchyIndexController : MonoBehaviour
     private InputAction navigate_action;
     private InputAction select_action;
     private InputAction start_action;
+    private InputAction cancel_action;
 
-    private int held_direction; // -1 0 +1
+    private int held_direction;
     private float next_repeat_time = float.PositiveInfinity;
     private bool is_locked;
+    private string last_selected_name = "";
+
+    private bool cancel_hold_active;
+    private float cancel_hold_start_time = -1f;
 
     /*
     Return the transform to control. Uses connected when present else this transform.
+    * @param none
     */
     private Transform SourceTransform
     {
@@ -63,6 +85,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
 
     /*
     Return the parent of the source transform.
+    * @param none
     */
     public Transform ParentTransform
     {
@@ -79,6 +102,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
 
     /*
     Return the grandparent of the source transform.
+    * @param none
     */
     public Transform GrandparentTransform
     {
@@ -95,6 +119,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
 
     /*
     Initialize current index and resolve input actions.
+    * @param none
     */
     void Awake()
     {
@@ -104,24 +129,31 @@ public sealed class HierarchyIndexController : MonoBehaviour
         navigate_action = ResolveActionFromReference(navigate_action_reference, player_input);
         if (navigate_action == null && player_input != null && player_input.actions != null)
         {
-            navigate_action = player_input.actions.FindAction("UI/Navigate", throwIfNotFound: false);
+            navigate_action = player_input.actions.FindAction("UI/Navigate", false);
         }
 
         select_action = ResolveActionFromReference(select_action_reference, player_input);
         if (select_action == null && player_input != null && player_input.actions != null)
         {
-            select_action = player_input.actions.FindAction("UI/Submit", throwIfNotFound: false);
+            select_action = player_input.actions.FindAction("UI/Submit", false);
         }
 
         start_action = ResolveActionFromReference(start_game_action_reference, player_input);
         if (start_action == null && player_input != null && player_input.actions != null)
         {
-            start_action = player_input.actions.FindAction("UI/Start", throwIfNotFound: false);
+            start_action = player_input.actions.FindAction("UI/Start", false);
+        }
+
+        cancel_action = ResolveActionFromReference(cancel_action_reference, player_input);
+        if (cancel_action == null && player_input != null && player_input.actions != null)
+        {
+            cancel_action = player_input.actions.FindAction("UI/Cancel", false);
         }
     }
 
     /*
     Enable actions and seed the current index from the grandparent count.
+    * @param none
     */
     void OnEnable()
     {
@@ -153,6 +185,16 @@ public sealed class HierarchyIndexController : MonoBehaviour
             start_action.performed += OnStartPerformed;
         }
 
+        if (cancel_action != null)
+        {
+            if (!cancel_action.enabled)
+            {
+                cancel_action.Enable();
+            }
+            cancel_action.started += OnCancelStarted;
+            cancel_action.canceled += OnCancelCanceled;
+        }
+
         Transform gp = GrandparentTransform;
         if (gp != null)
         {
@@ -165,6 +207,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
 
     /*
     Disable actions and clear held state.
+    * @param none
     */
     void OnDisable()
     {
@@ -196,12 +239,25 @@ public sealed class HierarchyIndexController : MonoBehaviour
             }
         }
 
+        if (cancel_action != null)
+        {
+            cancel_action.started -= OnCancelStarted;
+            cancel_action.canceled -= OnCancelCanceled;
+            if (cancel_action.enabled)
+            {
+                cancel_action.Disable();
+            }
+        }
+
         held_direction = 0;
         next_repeat_time = float.PositiveInfinity;
+        cancel_hold_active = false;
+        cancel_hold_start_time = -1f;
     }
 
     /*
     Drive repeat navigation when a direction is held.
+    * @param none
     */
     void Update()
     {
@@ -214,7 +270,6 @@ public sealed class HierarchyIndexController : MonoBehaviour
             return;
         }
 
-        // When a direction is held we step the index after a delay and then at a fixed rate.
         if (held_direction != 0)
         {
             if (Time.unscaledTime >= next_repeat_time)
@@ -228,7 +283,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
 
     /*
     Handle navigate input and start the repeat timer.
-    @param context Input context with a 2D vector.
+    * @param context Input context with a 2D vector
     */
     private void OnNavigatePerformed(InputAction.CallbackContext context)
     {
@@ -244,7 +299,6 @@ public sealed class HierarchyIndexController : MonoBehaviour
         Vector2 v = context.ReadValue<Vector2>();
         int direction = 0;
 
-        // Simple horizontal gate with a deadzone so small stick noise does not move selection
         if (v.x > horizontal_deadzone)
         {
             direction = 1;
@@ -264,8 +318,6 @@ public sealed class HierarchyIndexController : MonoBehaviour
                 held_direction = direction;
                 StepIndex(held_direction);
                 ReparentConnectedToCurrent();
-
-                // Start the initial delay. After this the repeat uses repeat_rate
                 next_repeat_time = Time.unscaledTime + repeat_delay;
             }
         }
@@ -278,6 +330,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
 
     /*
     Stop repeating when navigate is released.
+    * @param context Input context
     */
     private void OnNavigateCanceled(InputAction.CallbackContext context)
     {
@@ -287,6 +340,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
 
     /*
     Assign the selected child name to the global character slots and lock input.
+    * @param context Input context
     */
     private void OnSelectPerformed(InputAction.CallbackContext context)
     {
@@ -307,7 +361,6 @@ public sealed class HierarchyIndexController : MonoBehaviour
 
         string chosen_name = pick.name;
 
-        // Map to slots depending on singleplayer or multiplayer
         if (CharacterSelect.is_singleplayer)
         {
             CharacterSelect.p1_character = chosen_name;
@@ -332,7 +385,6 @@ public sealed class HierarchyIndexController : MonoBehaviour
                 }
                 else
                 {
-                    // Fallback for unexpected indices. Fill the first empty slot
                     if (string.IsNullOrEmpty(CharacterSelect.p1_character))
                     {
                         CharacterSelect.p1_character = chosen_name;
@@ -348,10 +400,10 @@ public sealed class HierarchyIndexController : MonoBehaviour
             }
         }
 
-        is_locked = true; // lock navigation after choosing
+        is_locked = true;
+        last_selected_name = chosen_name;
         ReparentConnectedToCurrent();
 
-        // Simple selection log for debugging
         int player_index_log = -1;
         if (player_input != null)
         {
@@ -362,6 +414,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
 
     /*
     Start the game in the selected mode.
+    * @param context Input context
     */
     private void OnStartPerformed(InputAction.CallbackContext context)
     {
@@ -376,8 +429,117 @@ public sealed class HierarchyIndexController : MonoBehaviour
     }
 
     /*
+    Begin measuring cancel hold duration.
+    * @param context Input context
+    */
+    private void OnCancelStarted(InputAction.CallbackContext context)
+    {
+        if (!InputAllowedForThisInstance())
+        {
+            return;
+        }
+        cancel_hold_active = true;
+        cancel_hold_start_time = Time.unscaledTime;
+    }
+
+    /*
+    Complete cancel hold. Short tap clears selection when locked. Long hold backs out.
+    * @param context Input context
+    */
+    private void OnCancelCanceled(InputAction.CallbackContext context)
+    {
+        if (!InputAllowedForThisInstance())
+        {
+            cancel_hold_active = false;
+            cancel_hold_start_time = -1f;
+            return;
+        }
+
+        float held = 0f;
+        if (cancel_hold_active)
+        {
+            held = Time.unscaledTime - cancel_hold_start_time;
+        }
+
+        cancel_hold_active = false;
+        cancel_hold_start_time = -1f;
+
+        if (held >= cancel_hold_seconds)
+        {
+            TriggerBackOut();
+            return;
+        }
+
+        if (is_locked)
+        {
+            if (CharacterSelect.is_singleplayer)
+            {
+                CharacterSelect.p1_character = "";
+            }
+            else
+            {
+                int idx = -1;
+                if (player_input != null)
+                {
+                    idx = player_input.playerIndex;
+                }
+
+                if (idx == 0)
+                {
+                    CharacterSelect.p1_character = "";
+                }
+                else
+                {
+                    if (idx == 1)
+                    {
+                        CharacterSelect.p2_character = "";
+                    }
+                    else
+                    {
+                        if (CharacterSelect.p1_character == last_selected_name)
+                        {
+                            CharacterSelect.p1_character = "";
+                        }
+                        if (CharacterSelect.p2_character == last_selected_name)
+                        {
+                            CharacterSelect.p2_character = "";
+                        }
+                    }
+                }
+            }
+
+            is_locked = false;
+            held_direction = 0;
+            next_repeat_time = float.PositiveInfinity;
+            last_selected_name = "";
+            Debug.Log("Selection canceled and navigation unlocked");
+        }
+    }
+
+    /*
+    Perform back out behavior for long cancel.
+    * @param none
+    */
+    private void TriggerBackOut()
+    {
+        if (!string.IsNullOrEmpty(back_out_scene_name))
+        {
+            SceneManager.LoadScene(back_out_scene_name);
+            return;
+        }
+
+        if (on_long_cancel != null)
+        {
+            on_long_cancel.Invoke();
+            return;
+        }
+
+        Debug.LogWarning("Back out requested but no scene or event set");
+    }
+
+    /*
     Move current index by delta with wrap or clamp.
-    @param delta Signed step to move selection.
+    * @param delta Signed step amount
     */
     public void StepIndex(int delta)
     {
@@ -397,7 +559,6 @@ public sealed class HierarchyIndexController : MonoBehaviour
         int next = current_index + delta;
         if (wrap_around)
         {
-            // Use modulo then fix negative values so index stays in 0..count-1
             next = next % count;
             if (next < 0)
             {
@@ -413,6 +574,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
 
     /*
     Get the current child under the grandparent using the current index.
+    * @param none
     */
     public Transform GetCurrentGrandparentChild()
     {
@@ -436,6 +598,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
 
     /*
     Reparent the controlled transform to the current selection and reset local values.
+    * @param none
     */
     public Transform ReparentConnectedToCurrent()
     {
@@ -462,9 +625,9 @@ public sealed class HierarchyIndexController : MonoBehaviour
     }
 
     /*
-    Find an action in the owner asset by reference. Falls back to the reference action when no asset match is found.
-    @param reference Input action reference to resolve.
-    @param owner Player input that owns an action asset.
+    Find an action in the owner asset by reference.
+    * @param reference Input action reference
+    * @param owner Player input owning the asset
     */
     private static InputAction ResolveActionFromReference(InputActionReference reference, PlayerInput owner)
     {
@@ -497,6 +660,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
 
     /*
     Only allow input from player one in singleplayer.
+    * @param none
     */
     private bool InputAllowedForThisInstance()
     {
@@ -511,7 +675,6 @@ public sealed class HierarchyIndexController : MonoBehaviour
             idx = player_input.playerIndex;
         }
 
-        // Only player one can navigate select and start when singleplayer is enabled
         if (idx == 0)
         {
             return true;

@@ -101,7 +101,7 @@ GameObject:
   - component: {fileID: 3813640424018470540}
   - component: {fileID: 645736216661431722}
   m_Layer: 0
-  m_Name: Carmen Dynamo
+  m_Name: Chargo
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -388,8 +388,8 @@ Transform:
   m_GameObject: {fileID: 2748774859158883045}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.162, y: 0.159, z: 0}
-  m_LocalScale: {x: 2.1057599, y: 1.808, z: 1}
+  m_LocalPosition: {x: 0.06, y: -0.16, z: 0}
+  m_LocalScale: {x: 2.6, y: 2.3, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3813640424018470540}
@@ -441,8 +441,8 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -8266232866351695853, guid: 80b41a6e5853f004fa0158f0a2bf1162, type: 3}
-  m_Color: {r: 0, g: 0, b: 0, a: 1}
+  m_Sprite: {fileID: -9048938390511717775, guid: 42d3a8236dc5361429f78d45e6e42b1b, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

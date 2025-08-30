@@ -252,12 +252,23 @@ MonoBehaviour:
   - characterName: Carmen Dynamo
     upPrefabWithPlayerInput: {fileID: 1313185823094702208, guid: ed6bfd31429248949ad35174854fcbe1, type: 3}
     downPrefabWithPlayerInput: {fileID: 2482280193210528136, guid: 3c5bab723f33ad846a6da2a60510be7c, type: 3}
+    upCPUPrefab: {fileID: 0}
+    downCPUPrefab: {fileID: 0}
   - characterName: DKLA
     upPrefabWithPlayerInput: {fileID: 8846360276859056810, guid: a9c6d9b6f0d3e5e40a3a32be8348af13, type: 3}
     downPrefabWithPlayerInput: {fileID: 4228421582200542465, guid: fb6fd78bc31276a4db508a70d16e66f8, type: 3}
+    upCPUPrefab: {fileID: 0}
+    downCPUPrefab: {fileID: 0}
   - characterName: JohnPong
     upPrefabWithPlayerInput: {fileID: 2861792367151787122, guid: ddb620d74f23bfe44a0b1b229ab5569d, type: 3}
     downPrefabWithPlayerInput: {fileID: 4479925921038309657, guid: 87c61f2c6ccdbb94baa15cd328c67f20, type: 3}
+    upCPUPrefab: {fileID: 0}
+    downCPUPrefab: {fileID: 0}
+  - characterName: Chargo
+    upPrefabWithPlayerInput: {fileID: 6409567959936447487, guid: ed3674fc93f629b4fb264989e041c15e, type: 3}
+    downPrefabWithPlayerInput: {fileID: 8711571525175726729, guid: a9ea507ae92090648b9d68e270da6dab, type: 3}
+    upCPUPrefab: {fileID: 0}
+    downCPUPrefab: {fileID: 0}
   actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   gamepadScheme: Gamepad
   keyboardMouseScheme: Keyboard&Mouse
@@ -652,12 +663,23 @@ MonoBehaviour:
   - characterName: Carmen Dynamo
     upPrefabWithPlayerInput: {fileID: 1313185823094702208, guid: ed6bfd31429248949ad35174854fcbe1, type: 3}
     downPrefabWithPlayerInput: {fileID: 2482280193210528136, guid: 3c5bab723f33ad846a6da2a60510be7c, type: 3}
+    upCPUPrefab: {fileID: 0}
+    downCPUPrefab: {fileID: 0}
   - characterName: DKLA
     upPrefabWithPlayerInput: {fileID: 8846360276859056810, guid: a9c6d9b6f0d3e5e40a3a32be8348af13, type: 3}
     downPrefabWithPlayerInput: {fileID: 4228421582200542465, guid: fb6fd78bc31276a4db508a70d16e66f8, type: 3}
+    upCPUPrefab: {fileID: 0}
+    downCPUPrefab: {fileID: 0}
   - characterName: JohnPong
     upPrefabWithPlayerInput: {fileID: 2861792367151787122, guid: ddb620d74f23bfe44a0b1b229ab5569d, type: 3}
     downPrefabWithPlayerInput: {fileID: 4479925921038309657, guid: 87c61f2c6ccdbb94baa15cd328c67f20, type: 3}
+    upCPUPrefab: {fileID: 0}
+    downCPUPrefab: {fileID: 0}
+  - characterName: Chargo
+    upPrefabWithPlayerInput: {fileID: 6409567959936447487, guid: ed3674fc93f629b4fb264989e041c15e, type: 3}
+    downPrefabWithPlayerInput: {fileID: 8711571525175726729, guid: a9ea507ae92090648b9d68e270da6dab, type: 3}
+    upCPUPrefab: {fileID: 0}
+    downCPUPrefab: {fileID: 0}
   actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   gamepadScheme: Gamepad
   keyboardMouseScheme: Keyboard&Mouse

@@ -275,7 +275,21 @@ public class PingPongMovement : MonoBehaviour
     {
         if (move_action == null)
         {
-            Debug.LogWarning("Move action is null.");
+            // Check if this is a CPU player that shouldn't be using PingPongMovement
+            var cpuPlayer = GetComponent<CPUPlayer>();
+            if (cpuPlayer != null)
+            {
+                // This is a CPU player, disable this component
+                Debug.Log($"Disabling PingPongMovement on CPU player {gameObject.name}");
+                enabled = false;
+                return;
+            }
+            
+            // For non-CPU players, this is still an issue
+            if (Time.frameCount % 60 == 0) // Only log once per second to avoid spam
+            {
+                Debug.LogWarning($"Move action is null on {gameObject.name}. If this is a CPU player, ensure CPUPlayer component is attached.");
+            }
             return;
         }
 
