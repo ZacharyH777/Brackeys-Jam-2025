@@ -15,7 +15,7 @@ public sealed class CPUMovement : MonoBehaviour
     [Header("Refs")]
     [Tooltip("Ball to track")]
     public BallPhysics2D ball;
-    [Tooltip("Center line of table")]
+    [Tooltip("Center line of table (net)")]
     public Transform center_line;
     [Tooltip("Aim anchor on table")]
     public Transform center_target;
@@ -69,7 +69,6 @@ public sealed class CPUMovement : MonoBehaviour
     public PingPongMovement ping_pong_target;
 
     private Rigidbody2D rigidbody2d;
-    private PlayerOwner player_owner;
 
     private Vector2 current_target_position;
     private Vector2 smoothed_target_position;
@@ -86,7 +85,6 @@ public sealed class CPUMovement : MonoBehaviour
     void Awake()
     {
         rigidbody2d = GetComponent<Rigidbody2D>();
-        player_owner = GetComponent<PlayerOwner>();
 
         rigidbody2d.gravityScale = 0f;
         rigidbody2d.interpolation = RigidbodyInterpolation2D.Interpolate;
@@ -112,47 +110,66 @@ public sealed class CPUMovement : MonoBehaviour
     }
 
     /*
-    * Find "ball", "net", and "ai_target" by name if missing.
-    * Falls back to FindFirstObjectByType when needed.
-    * @param none
+    * Find tags first (ai_b, ai_c, ai_t), then names ("ball", "net", "ai_target"),
+    * then by type (parameterless FindFirstObjectByType for Unity 6.2).
     */
     private void AutoFindReferences()
     {
         if (ball == null)
         {
-            var go_ball = GameObject.Find("ball");
-            if (go_ball != null)
+            GameObject by_tag = SafeFindByTag("ai_b");
+            if (by_tag != null)
             {
-                ball = go_ball.GetComponent<BallPhysics2D>();
+                ball = by_tag.GetComponent<BallPhysics2D>();
                 if (ball == null)
                 {
-                    ball = go_ball.GetComponentInChildren<BallPhysics2D>();
+                    ball = by_tag.GetComponentInChildren<BallPhysics2D>();
                 }
             }
             if (ball == null)
             {
-                var found_ball = FindFirstObjectByType<BallPhysics2D>(FindObjectsSortMode.InstanceID);
-                if (found_ball != null)
+                GameObject by_name = GameObject.Find("ball");
+                if (by_name != null)
                 {
-                    ball = found_ball;
+                    ball = by_name.GetComponent<BallPhysics2D>();
+                    if (ball == null)
+                    {
+                        ball = by_name.GetComponentInChildren<BallPhysics2D>();
+                    }
                 }
             }
             if (ball == null)
             {
-                Debug.LogWarning("CPUMovement could not find 'ball'");
+                BallPhysics2D found = Object.FindFirstObjectByType<BallPhysics2D>();
+                if (found != null)
+                {
+                    ball = found;
+                }
+            }
+            if (ball == null)
+            {
+                Debug.LogWarning("CPUMovement could not find BallPhysics2D (tag 'ai_b' or name 'ball').");
             }
         }
 
         if (center_line == null)
         {
-            var go_net = GameObject.Find("net");
-            if (go_net != null)
+            GameObject by_tag = SafeFindByTag("ai_c");
+            if (by_tag != null)
             {
-                center_line = go_net.transform;
+                center_line = by_tag.transform;
             }
             if (center_line == null)
             {
-                var loop = FindFirstObjectByType<PingPongLoop>(FindObjectsSortMode.InstanceID);
+                GameObject by_name = GameObject.Find("net");
+                if (by_name != null)
+                {
+                    center_line = by_name.transform;
+                }
+            }
+            if (center_line == null)
+            {
+                PingPongLoop loop = Object.FindFirstObjectByType<PingPongLoop>();
                 if (loop != null)
                 {
                     center_line = loop.center_line;
@@ -160,26 +177,38 @@ public sealed class CPUMovement : MonoBehaviour
             }
             if (center_line == null)
             {
-                Debug.LogWarning("CPUMovement could not find 'net' or PingPongLoop.center_line");
+                Debug.LogWarning("CPUMovement could not find center line (tag 'ai_c' or name 'net').");
             }
         }
 
         if (center_target == null)
         {
-            var go_target = GameObject.Find("ai_target");
-            if (go_target != null)
+            GameObject by_tag = SafeFindByTag("ai_t");
+            if (by_tag != null)
             {
-                center_target = go_target.transform;
+                center_target = by_tag.transform;
             }
             if (center_target == null)
             {
-                // center_target is optional; no warning needed
+                GameObject by_name = GameObject.Find("ai_target");
+                if (by_name != null)
+                {
+                    center_target = by_name.transform;
+                }
             }
+            // optional, so no warning if missing
         }
+    }
 
-        if (player_owner == null)
+    private GameObject SafeFindByTag(string tag)
+    {
+        try
         {
-            player_owner = GetComponent<PlayerOwner>();
+            return GameObject.FindGameObjectWithTag(tag);
+        }
+        catch
+        {
+            return null;
         }
     }
 
@@ -222,6 +251,9 @@ public sealed class CPUMovement : MonoBehaviour
         last_ball_position = pos;
     }
 
+    /*
+    * Body mode: follow a lead point with offset for reach.
+    */
     private void FixedUpdateBodyController()
     {
         if (ball == null)
@@ -237,29 +269,32 @@ public sealed class CPUMovement : MonoBehaviour
 
         Vector2 axis_offset = follow_offset;
 
-        if (center_line != null && player_owner != null)
+        if (center_line != null)
         {
+            int side = GetSideSign();
             if (split_by_y == true)
             {
-                if (player_owner.player_id == PlayerId.P1)
+                float abs_y = Mathf.Abs(follow_offset.y);
+                if (side < 0)
                 {
-                    axis_offset.y = -Mathf.Abs(follow_offset.y);
+                    axis_offset.y = -abs_y;
                 }
                 else
                 {
-                    axis_offset.y = Mathf.Abs(follow_offset.y);
+                    axis_offset.y = abs_y;
                 }
                 axis_offset.x = follow_offset.x;
             }
             else
             {
-                if (player_owner.player_id == PlayerId.P1)
+                float abs_x = Mathf.Abs(follow_offset.x);
+                if (side < 0)
                 {
-                    axis_offset.x = -Mathf.Abs(follow_offset.x);
+                    axis_offset.x = -abs_x;
                 }
                 else
                 {
-                    axis_offset.x = Mathf.Abs(follow_offset.x);
+                    axis_offset.x = abs_x;
                 }
                 axis_offset.y = follow_offset.y;
             }
@@ -269,6 +304,9 @@ public sealed class CPUMovement : MonoBehaviour
         SetTargetPosition(target);
     }
 
+    /*
+    * Target mode: intercept ball and strike toward far side.
+    */
     private void FixedUpdateTargetController()
     {
         if (ball == null)
@@ -378,29 +416,27 @@ public sealed class CPUMovement : MonoBehaviour
         Vector2 center = center_line.position;
         Vector2 off = Vector2.zero;
 
-        if (player_owner != null)
+        int side = GetSideSign();
+        if (split_by_y == true)
         {
-            if (split_by_y == true)
+            if (side < 0)
             {
-                if (player_owner.player_id == PlayerId.P1)
-                {
-                    off.y = -1.2f;
-                }
-                else
-                {
-                    off.y = 1.2f;
-                }
+                off.y = -1.2f;
             }
             else
             {
-                if (player_owner.player_id == PlayerId.P1)
-                {
-                    off.x = -1.2f;
-                }
-                else
-                {
-                    off.x = 1.2f;
-                }
+                off.y = 1.2f;
+            }
+        }
+        else
+        {
+            if (side < 0)
+            {
+                off.x = -1.2f;
+            }
+            else
+            {
+                off.x = 1.2f;
             }
         }
 
@@ -461,7 +497,6 @@ public sealed class CPUMovement : MonoBehaviour
         }
 
         Vector2 anchor = center_line.position;
-
         if (center_target != null)
         {
             anchor = center_target.position;
@@ -475,40 +510,40 @@ public sealed class CPUMovement : MonoBehaviour
 
         Vector2 aim = anchor + jitter;
 
-        if (player_owner != null)
+        float margin = Mathf.Abs(aim_jitter) + 0.5f;
+        int side = GetSideSign();
+
+        if (split_by_y == true)
         {
-            if (split_by_y == true)
+            if (side < 0)
             {
-                if (player_owner.player_id == PlayerId.P1)
+                if (aim.y <= center_line.position.y)
                 {
-                    if (aim.y <= center_line.position.y)
-                    {
-                        aim.y = center_line.position.y + Mathf.Abs(aim_jitter) + 0.5f;
-                    }
-                }
-                else
-                {
-                    if (aim.y >= center_line.position.y)
-                    {
-                        aim.y = center_line.position.y - Mathf.Abs(aim_jitter) - 0.5f;
-                    }
+                    aim.y = center_line.position.y + margin;
                 }
             }
             else
             {
-                if (player_owner.player_id == PlayerId.P1)
+                if (aim.y >= center_line.position.y)
                 {
-                    if (aim.x <= center_line.position.x)
-                    {
-                        aim.x = center_line.position.x + Mathf.Abs(aim_jitter) + 0.5f;
-                    }
+                    aim.y = center_line.position.y - margin;
                 }
-                else
+            }
+        }
+        else
+        {
+            if (side < 0)
+            {
+                if (aim.x <= center_line.position.x)
                 {
-                    if (aim.x >= center_line.position.x)
-                    {
-                        aim.x = center_line.position.x - Mathf.Abs(aim_jitter) - 0.5f;
-                    }
+                    aim.x = center_line.position.x + margin;
+                }
+            }
+            else
+            {
+                if (aim.x >= center_line.position.x)
+                {
+                    aim.x = center_line.position.x - margin;
                 }
             }
         }
@@ -549,33 +584,26 @@ public sealed class CPUMovement : MonoBehaviour
             return true;
         }
 
-        if (player_owner == null)
-        {
-            return true;
-        }
-
-        Vector2 c = center_line.position;
-
         if (split_by_y == true)
         {
-            if (player_owner.player_id == PlayerId.P1)
+            if (GetSideSign() < 0)
             {
-                return ball_pos.y < c.y;
+                return ball_pos.y < center_line.position.y;
             }
             else
             {
-                return ball_pos.y > c.y;
+                return ball_pos.y > center_line.position.y;
             }
         }
         else
         {
-            if (player_owner.player_id == PlayerId.P1)
+            if (GetSideSign() < 0)
             {
-                return ball_pos.x < c.x;
+                return ball_pos.x < center_line.position.x;
             }
             else
             {
-                return ball_pos.x > c.x;
+                return ball_pos.x > center_line.position.x;
             }
         }
     }
@@ -587,23 +615,16 @@ public sealed class CPUMovement : MonoBehaviour
             return false;
         }
 
-        if (player_owner == null)
-        {
-            return false;
-        }
-
         if (ball_vel.magnitude < 0.05f)
         {
             return false;
         }
 
-        Vector2 c = center_line.position;
-
         if (split_by_y == true)
         {
-            if (player_owner.player_id == PlayerId.P1)
+            if (GetSideSign() < 0)
             {
-                if (ball_pos.y > c.y && ball_vel.y < 0f)
+                if (ball_pos.y > center_line.position.y && ball_vel.y < 0f)
                 {
                     return true;
                 }
@@ -611,7 +632,7 @@ public sealed class CPUMovement : MonoBehaviour
             }
             else
             {
-                if (ball_pos.y < c.y && ball_vel.y > 0f)
+                if (ball_pos.y < center_line.position.y && ball_vel.y > 0f)
                 {
                     return true;
                 }
@@ -620,9 +641,9 @@ public sealed class CPUMovement : MonoBehaviour
         }
         else
         {
-            if (player_owner.player_id == PlayerId.P1)
+            if (GetSideSign() < 0)
             {
-                if (ball_pos.x > c.x && ball_vel.x < 0f)
+                if (ball_pos.x > center_line.position.x && ball_vel.x < 0f)
                 {
                     return true;
                 }
@@ -630,7 +651,7 @@ public sealed class CPUMovement : MonoBehaviour
             }
             else
             {
-                if (ball_pos.x < c.x && ball_vel.x > 0f)
+                if (ball_pos.x < center_line.position.x && ball_vel.x > 0f)
                 {
                     return true;
                 }
@@ -754,6 +775,39 @@ public sealed class CPUMovement : MonoBehaviour
         Vector2 input_vec = v.normalized;
         float scale = Mathf.Clamp01(v.magnitude / max_speed);
         input_vec = input_vec * scale;
+
+        // Hook animation input here if needed.
+    }
+
+    /*
+    * Determine side sign relative to center_line.
+    * -1 = lower/left side, +1 = upper/right side.
+    */
+    private int GetSideSign()
+    {
+        if (center_line == null)
+        {
+            return 1;
+        }
+
+        if (split_by_y == true)
+        {
+            float dy = transform.position.y - center_line.position.y;
+            if (dy < 0f)
+            {
+                return -1;
+            }
+            return 1;
+        }
+        else
+        {
+            float dx = transform.position.x - center_line.position.x;
+            if (dx < 0f)
+            {
+                return -1;
+            }
+            return 1;
+        }
     }
 
     private void DetectModeFromName()
