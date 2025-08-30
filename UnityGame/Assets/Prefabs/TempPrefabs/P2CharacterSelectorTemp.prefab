@@ -209,6 +209,12 @@ MonoBehaviour:
   navigate_action_reference: {fileID: -8784545083839296357, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   select_action_reference: {fileID: 392368643174621059, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   start_game_action_reference: {fileID: 3001919216989983466, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  cancel_action_reference: {fileID: 7727032971491509709, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  cancel_hold_seconds: 3
+  back_out_scene_name: MainMenu
+  on_long_cancel:
+    m_PersistentCalls:
+      m_Calls: []
   horizontal_deadzone: 0.5
   repeat_delay: 0.45
   repeat_rate: 0.1

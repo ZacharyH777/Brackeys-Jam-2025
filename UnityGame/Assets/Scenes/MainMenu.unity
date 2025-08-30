@@ -266,6 +266,7 @@ GameObject:
   m_Component:
   - component: {fileID: 579155013}
   - component: {fileID: 579155014}
+  - component: {fileID: 579155015}
   m_Layer: 0
   m_Name: arcademode_0
   m_TagString: Untagged
@@ -336,7 +337,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: -73937700647490825, guid: ead33a6946c43c34f8c41154101ff339, type: 3}
-  m_Color: {r: 0.9490197, g: 0.89019614, b: 0.5058824, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -346,6 +347,32 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &579155015
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 579155012}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49a13a30faf7ce14fb58cffad44457a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MenuActionRunner
+  action_type: 0
+  play_scene_name: CharatcerSelectScene
+  options_scene_name: 
+  credits_scene_name: 
+  extras_scene_name: 
+  on_play:
+    m_PersistentCalls:
+      m_Calls: []
+  on_options:
+    m_PersistentCalls:
+      m_Calls: []
+  on_credits:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &741611851
 GameObject:
   m_ObjectHideFlags: 0
@@ -446,6 +473,7 @@ GameObject:
   m_Component:
   - component: {fileID: 754376316}
   - component: {fileID: 754376317}
+  - component: {fileID: 754376318}
   m_Layer: 0
   m_Name: EXTRAS_0
   m_TagString: Untagged
@@ -526,6 +554,32 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &754376318
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 754376315}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49a13a30faf7ce14fb58cffad44457a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MenuActionRunner
+  action_type: 3
+  play_scene_name: CharatcerSelect
+  options_scene_name: 
+  credits_scene_name: 
+  extras_scene_name: 
+  on_play:
+    m_PersistentCalls:
+      m_Calls: []
+  on_options:
+    m_PersistentCalls:
+      m_Calls: []
+  on_credits:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &872346115
 GameObject:
   m_ObjectHideFlags: 0
@@ -673,6 +727,7 @@ GameObject:
   m_Component:
   - component: {fileID: 941240379}
   - component: {fileID: 941240380}
+  - component: {fileID: 941240381}
   m_Layer: 0
   m_Name: versusmode_0
   m_TagString: Untagged
@@ -753,6 +808,32 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &941240381
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 941240378}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49a13a30faf7ce14fb58cffad44457a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MenuActionRunner
+  action_type: 1
+  play_scene_name: CharatcerSelectScene
+  options_scene_name: 
+  credits_scene_name: 
+  extras_scene_name: 
+  on_play:
+    m_PersistentCalls:
+      m_Calls: []
+  on_options:
+    m_PersistentCalls:
+      m_Calls: []
+  on_credits:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1162246713
 GameObject:
   m_ObjectHideFlags: 0
@@ -986,6 +1067,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1839618541}
   - component: {fileID: 1839618542}
+  - component: {fileID: 1839618543}
   m_Layer: 0
   m_Name: help_0
   m_TagString: Untagged
@@ -1066,6 +1148,32 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &1839618543
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1839618540}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49a13a30faf7ce14fb58cffad44457a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MenuActionRunner
+  action_type: 2
+  play_scene_name: CharatcerSelect
+  options_scene_name: 
+  credits_scene_name: 
+  extras_scene_name: 
+  on_play:
+    m_PersistentCalls:
+      m_Calls: []
+  on_options:
+    m_PersistentCalls:
+      m_Calls: []
+  on_credits:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &2108911809
 GameObject:
   m_ObjectHideFlags: 0
