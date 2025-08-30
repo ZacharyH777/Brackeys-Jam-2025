@@ -570,7 +570,7 @@ MonoBehaviour:
   play_scene_name: CharatcerSelect
   options_scene_name: 
   credits_scene_name: 
-  extras_scene_name: 
+  extras_scene_name: Extras
   on_play:
     m_PersistentCalls:
       m_Calls: []
@@ -1163,8 +1163,8 @@ MonoBehaviour:
   action_type: 2
   play_scene_name: CharatcerSelect
   options_scene_name: 
-  credits_scene_name: 
-  extras_scene_name: 
+  credits_scene_name: Help
+  extras_scene_name: Extras
   on_play:
     m_PersistentCalls:
       m_Calls: []

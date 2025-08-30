@@ -20,6 +20,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/CharatcerSelectScene_Singleplayer.unity
     guid: 930d4d3ec27714a97b34ced2c8817731
+  - enabled: 1
+    path: Assets/Scenes/Help.unity
+    guid: 9476a0d047406604d935c0824dd28078
+  - enabled: 1
+    path: Assets/Scenes/Extras.unity
+    guid: 0dded43580dc06841be270c7ee4cad30
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

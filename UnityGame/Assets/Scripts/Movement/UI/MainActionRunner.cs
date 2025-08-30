@@ -87,7 +87,7 @@ public sealed class MenuActionRunner : MonoBehaviour
     */
     private void DoVersus()
     {
-        if (!string.IsNullOrEmpty(options_scene_name))
+        if (!string.IsNullOrEmpty(play_scene_name))
         {
             CharacterSelect.is_singleplayer = false;
             SceneManager.LoadScene(play_scene_name);
@@ -113,14 +113,14 @@ public sealed class MenuActionRunner : MonoBehaviour
     }
 
     /*
-    * Quit game or invoke event.
+    * Load Extras scene or invoke event.
     * @param none
     */
     private void DoExtras()
     {
-        if (!string.IsNullOrEmpty(credits_scene_name))
+        if (!string.IsNullOrEmpty(extras_scene_name))
         {
-            SceneManager.LoadScene(options_scene_name);
+            SceneManager.LoadScene(extras_scene_name);
             return;
         }
     }
