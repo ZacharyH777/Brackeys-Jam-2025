@@ -374,7 +374,7 @@ SpriteRenderer:
   m_Size: {x: 1, y: 1}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
 --- !u!114 &1314678940134888572
@@ -391,14 +391,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UiScore
   watch_player: 1
   score_sprites:
-  - {fileID: 5088316998373936774, guid: 89b0ada283e4fa14696b1233b6c98085, type: 3}
-  - {fileID: -855298285791758126, guid: 4a7070346502e424f9ace4794cb61b1f, type: 3}
-  - {fileID: 6937817954938267909, guid: 296df82eee7da014aae8e665cdcafb43, type: 3}
-  - {fileID: -6470460504253458178, guid: ea2a406f193c3de49bbde0c7ba80961c, type: 3}
-  - {fileID: -4178046375966092550, guid: f55084d4c2c5ba642aa74d77b54d0f3f, type: 3}
-  - {fileID: 4130640169021434097, guid: 5901833c73ab7bf4396e1a08302b4208, type: 3}
-  - {fileID: 3465286685962602723, guid: 73b29febcb3edff4da7d102957ed4439, type: 3}
-  - {fileID: 7028616704906629411, guid: bec07196c82f61d4782c1fee9874ae60, type: 3}
+  - {fileID: 5088316998373936774, guid: ef7ecb55a4647d84ebd2c6202f51690c, type: 3}
+  - {fileID: -855298285791758126, guid: e799ff2e6ad615b46b36462cb694f901, type: 3}
+  - {fileID: 6937817954938267909, guid: 6b015d07a43c4b54fa3381cb7094aef7, type: 3}
+  - {fileID: -6470460504253458178, guid: 33e6291adaddf8d4dbc089cfe32b6cb5, type: 3}
+  - {fileID: -4178046375966092550, guid: aa41be83d15497d49a6d229d65f74ad8, type: 3}
+  - {fileID: 4130640169021434097, guid: 4663c064cb50d3340ab9cd1c8f81cd54, type: 3}
+  - {fileID: 3465286685962602723, guid: 53f269be9a0af904b80d900904922d3c, type: 3}
+  - {fileID: 7028616704906629411, guid: 2ca8a7d1eeb18f2458286b88d77207e0, type: 3}
   ui_image: {fileID: 0}
   sprite_renderer: {fileID: 6434234150010294179}
   verbose_logging: 1
@@ -1174,7 +1174,8 @@ MonoBehaviour:
   m_RequiresDepthTextureOption: 2
   m_RequiresOpaqueTextureOption: 2
   m_CameraType: 0
-  m_Cameras: []
+  m_Cameras:
+  - {fileID: 2539676279120237407}
   m_RendererIndex: -1
   m_VolumeLayerMask:
     serializedVersion: 2

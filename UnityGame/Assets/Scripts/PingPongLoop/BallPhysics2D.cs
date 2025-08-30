@@ -98,6 +98,16 @@ public sealed class BallPhysics2D : MonoBehaviour
     private float z_velocity;
     private float spin_scalar;
 
+    public AudioSource audioSource;  // Drag in AudioSource from Inspector
+    public AudioClip sfx_hit1;
+    public AudioClip sfx_hit2;
+    public AudioClip sfx_hit3;
+    public AudioClip sfx_hit4;
+    public AudioClip sfx_bounce1;
+    public AudioClip sfx_bounce2;
+    public AudioClip sfx_bounce3;
+    public AudioClip sfx_bounce4;
+
     private PaddleKinematics last_hitter;
     private float last_hit_time;
 
@@ -336,6 +346,26 @@ public sealed class BallPhysics2D : MonoBehaviour
             z_height = 0f;
 
             Action<Vector2> cb_bounce = on_table_bounce;
+
+            // Play ping pong bounce sfx
+            int index = UnityEngine.Random.Range(0, 4);
+            if (index == 1)
+            {
+                audioSource.PlayOneShot(sfx_bounce1);
+            }
+            else if (index == 2)
+            {
+                audioSource.PlayOneShot(sfx_bounce2);
+            }
+            else if (index == 3)
+            {
+                audioSource.PlayOneShot(sfx_bounce3);
+            }
+            else if (index == 4)
+            {
+                audioSource.PlayOneShot(sfx_bounce4);
+            }
+
             if (cb_bounce != null)
             {
                 cb_bounce(transform.position);
@@ -368,6 +398,26 @@ public sealed class BallPhysics2D : MonoBehaviour
 
         if (z_height <= floor_end_height)
         {
+            int index = UnityEngine.Random.Range(0, 4);
+
+            // Play ping pong bounce sfx
+            if (index == 1)
+            {
+                audioSource.PlayOneShot(sfx_bounce1);
+            }
+            else if (index == 2)
+            {
+                audioSource.PlayOneShot(sfx_bounce2);
+            }
+            else if (index == 3)
+            {
+                audioSource.PlayOneShot(sfx_bounce3);
+            }
+            else if (index == 4)
+            {
+                audioSource.PlayOneShot(sfx_bounce4);
+            }
+
             if (debug_logging)
             {
                 Debug.LogWarning("Round ended");
@@ -540,6 +590,25 @@ public sealed class BallPhysics2D : MonoBehaviour
         }
 
         rigidbody2d.linearVelocity = v;
+
+        // Play ping pong hit sfx
+        int index = UnityEngine.Random.Range(0, 4);
+        if (index==1)
+        {
+            audioSource.PlayOneShot(sfx_hit1);
+        }
+        else if(index==2)
+        {
+            audioSource.PlayOneShot(sfx_hit2);
+        }
+        else if (index == 3)
+        {
+            audioSource.PlayOneShot(sfx_hit3);
+        }
+        else if (index == 4)
+        {
+            audioSource.PlayOneShot(sfx_hit4);
+        }
 
         if (debug_logging)
         {
