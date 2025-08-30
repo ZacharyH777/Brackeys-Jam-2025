@@ -360,7 +360,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MenuActionRunner
   action_type: 0
-  play_scene_name: CharatcerSelectScene
+  play_scene_name: CharatcerSelectScene_SinglePlayer
   options_scene_name: 
   credits_scene_name: 
   extras_scene_name: 
@@ -822,7 +822,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MenuActionRunner
   action_type: 1
   play_scene_name: CharatcerSelectScene
-  options_scene_name: 
+  options_scene_name: CharatcerSelectScene
   credits_scene_name: 
   extras_scene_name: 
   on_play:
