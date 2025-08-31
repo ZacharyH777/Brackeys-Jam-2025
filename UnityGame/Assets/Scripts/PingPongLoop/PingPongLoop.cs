@@ -101,6 +101,9 @@ public sealed class PingPongLoop : MonoBehaviour
     private FaultType last_fault_type = FaultType.None;
     private PlayerId last_fault_by = PlayerId.P1;
 
+    // PLaySound
+    public PlaySound playSound;
+
     // ---------------- Lifecycle ----------------
     void Awake()
     {
@@ -482,6 +485,7 @@ public sealed class PingPongLoop : MonoBehaviour
 
     public void AwardPoint(PlayerId winner)
     {
+        playSound.sfx_point_score();
         if (game_over) return;
 
         in_rally = false;

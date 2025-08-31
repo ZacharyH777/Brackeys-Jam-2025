@@ -67,6 +67,8 @@ public sealed class HierarchyIndexController : MonoBehaviour
     private bool cancel_hold_active;
     private float cancel_hold_start_time = -1f;
 
+    private PlaySound playSound;
+
     /*
     Return the transform to control. Uses connected when present else this transform.
     * @param none
@@ -125,6 +127,8 @@ public sealed class HierarchyIndexController : MonoBehaviour
     {
         current_index = Mathf.Max(0, start_index);
         player_input = GetComponent<PlayerInput>();
+
+        playSound = GameObject.FindGameObjectWithTag("Audio").GetComponent<PlaySound>();
 
         navigate_action = ResolveActionFromReference(navigate_action_reference, player_input);
         if (navigate_action == null && player_input != null && player_input.actions != null)
@@ -360,6 +364,8 @@ public sealed class HierarchyIndexController : MonoBehaviour
         }
 
         string chosen_name = pick.name;
+        playSound.sfx_menu_select();
+
 
         if (CharacterSelect.is_singleplayer)
         {
@@ -440,6 +446,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
         }
         cancel_hold_active = true;
         cancel_hold_start_time = Time.unscaledTime;
+        playSound.sfx_menu_cancel();
     }
 
     /*
@@ -549,6 +556,8 @@ public sealed class HierarchyIndexController : MonoBehaviour
         {
             count = gp.childCount;
         }
+
+        playSound.sfx_menu_move();
 
         if (count <= 0)
         {

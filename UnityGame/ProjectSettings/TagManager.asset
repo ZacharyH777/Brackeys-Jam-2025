@@ -10,6 +10,7 @@ TagManager:
   - ai_c
   - ai_b
   - ai_t
+  - Audio
   layers:
   - Default
   - TransparentFX

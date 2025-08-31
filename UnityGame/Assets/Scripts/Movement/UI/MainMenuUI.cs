@@ -47,6 +47,8 @@ public sealed class MainMenuUI : MonoBehaviour
 
     private Transform last_parent_highlighted;
 
+    private PlaySound playSound;
+
     /*
     * Return the active source transform.
     * @param none
@@ -144,6 +146,8 @@ public sealed class MainMenuUI : MonoBehaviour
     void Awake()
     {
         current_index = 0;
+
+        playSound = GameObject.FindGameObjectWithTag("Audio").GetComponent<PlaySound>();
 
         GameObject ui_start = GameObject.FindGameObjectWithTag("UIStart");
         if (ui_start != null)
@@ -326,6 +330,7 @@ public sealed class MainMenuUI : MonoBehaviour
             return;
         }
 
+        playSound.sfx_menu_select();
         ClearHighlightOnParent(p);
         last_parent_highlighted = null;
 
@@ -365,6 +370,7 @@ public sealed class MainMenuUI : MonoBehaviour
             return;
         }
 
+        playSound.sfx_menu_move();
         int next = current_index + delta;
 
         if (wrap_around)

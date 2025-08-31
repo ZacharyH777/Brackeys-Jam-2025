@@ -14,6 +14,7 @@ public class PlaySound : MonoBehaviour
     public AudioClip sfx_bounce4;
     public AudioClip sfx_menu_move1;
     public AudioClip sfx_menu_select1;
+    public AudioClip sfx_menu_cancel1;
     public AudioClip sfx_point_score1;
 
     public void sfx_hit()
@@ -73,6 +74,11 @@ public class PlaySound : MonoBehaviour
 
     public void sfx_point_score()
     {
-        audioSource.PlayOneShot(sfx_menu_select1);
+        audioSource.PlayOneShot(sfx_point_score1);
+    }
+
+    public void sfx_menu_cancel()
+    {
+        audioSource.PlayOneShot(sfx_menu_cancel1);
     }
 }
