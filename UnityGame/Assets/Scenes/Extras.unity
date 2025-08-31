@@ -354,11 +354,11 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: f99f1d80f9568434b91d614b2ad56ee8, type: 3}
-  m_PlayOnAwake: 0
-  m_Volume: 0.5
+  m_Resource: {fileID: 8300000, guid: c0692be08edb0ca4cb7fe30253e0e6d2, type: 3}
+  m_PlayOnAwake: 1
+  m_Volume: 0.305
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
@@ -581,7 +581,7 @@ MonoBehaviour:
       m_SingletonActionBindings: []
       m_Flags: 0
     m_Reference: {fileID: 0}
-  m_PlayerPrefab: {fileID: 5290896791253208548, guid: bae8ac49f866eec46ac4dfaa35db48b3, type: 3}
+  m_PlayerPrefab: {fileID: 5290896791253208548, guid: 05b298bb19eff554cbd4deec07a519f3, type: 3}
   m_SplitScreen: 0
   m_MaintainAspectRatioInSplitScreen: 0
   m_FixedNumberOfSplitScreens: -1
@@ -649,11 +649,11 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 6087092e62083534eadbd7280cde8753, type: 3}
-  m_PlayOnAwake: 0
-  m_Volume: 0.5
+  m_Resource: {fileID: 8300000, guid: c0692be08edb0ca4cb7fe30253e0e6d2, type: 3}
+  m_PlayOnAwake: 1
+  m_Volume: 0.285
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
@@ -813,11 +813,11 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 835d44937f272fd4687977e0aea38ed2, type: 3}
+  m_Resource: {fileID: 8300000, guid: c0692be08edb0ca4cb7fe30253e0e6d2, type: 3}
   m_PlayOnAwake: 1
-  m_Volume: 0.615
+  m_Volume: 0.355
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
@@ -1485,9 +1485,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   audioSource_char1: {fileID: 1855064362}
-  audioSource_char2: {fileID: 0}
-  audioSource_char3: {fileID: 0}
-  audioSource_char4: {fileID: 0}
+  audioSource_char2: {fileID: 797443239}
+  audioSource_char3: {fileID: 1090341307}
+  audioSource_char4: {fileID: 276014253}
 --- !u!4 &1793113950
 Transform:
   m_ObjectHideFlags: 0
@@ -1535,11 +1535,11 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: cfdddf485aa213640a3c724fa85c1b62, type: 3}
-  m_PlayOnAwake: 0
-  m_Volume: 0.5
+  m_Resource: {fileID: 8300000, guid: c0692be08edb0ca4cb7fe30253e0e6d2, type: 3}
+  m_PlayOnAwake: 1
+  m_Volume: 0.34
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0

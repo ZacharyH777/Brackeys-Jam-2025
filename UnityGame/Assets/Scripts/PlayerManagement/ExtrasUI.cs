@@ -1,21 +1,23 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 /*
 * Index switcher for a menu row with highlight.
 * - Reparents the selector under the chosen child of the grandparent.
-* - Highlights the current parent SpriteRenderer to a yellowish color.
-* - Restores the previous parent color to white when leaving.
-* - One-step navigation per direction press (no auto-repeat).
-* - Right=+1, Left=-1, Down=+2, Up=-2 with wrap support.
-* - Select action calls RunSceneChange on parent.
+* - Activates current parent object while selected.
+* - Deactivates the previous parent object when leaving.
+* - Left is -1 and Right is +1 with wrap support and deadzone re arm.
+* - Adds auto repeat with first delay and repeat interval while held.
+* - Select calls RunSceneChange on parent.
+* - Cancel loads the main menu scene.
 */
 [RequireComponent(typeof(PlayerInput))]
 [AddComponentMenu("Utils/Index Switcher")]
 public sealed class ExtrasUI : MonoBehaviour
 {
     [Header("Source")]
-    [Tooltip("If null uses this transform")]
+    [Tooltip("Uses this transform if null")]
     public Transform connected;
 
     [Header("Input")]
@@ -25,29 +27,40 @@ public sealed class ExtrasUI : MonoBehaviour
     [Tooltip("Assign UI Submit")]
     public InputActionReference select_action_reference;
 
+    [Tooltip("Assign UI Cancel")]
+    public InputActionReference cancel_action_reference;
+
     [Header("Settings")]
     [Tooltip("Wrap around child list")]
     public bool wrap_around = true;
 
-    [Tooltip("Deadzone for both axes")]
+    [Tooltip("Deadzone for horizontal axis")]
     [Range(0f, 1f)] public float horizontal_deadzone = 0.5f;
 
     [Tooltip("Reset rotation and scale")]
     public bool reset_rotation_and_scale = false;
 
-    [Header("Highlight")]
-    [Tooltip("Color used while selected")]
-    public Color highlight_color = new Color(1f, 0.92f, 0.35f, 1f);
+    [Header("Repeat")]
+    [Tooltip("First repeat delay seconds")]
+    public float repeat_first_delay = 0.5f;
+
+    [Tooltip("Repeat interval seconds")]
+    public float repeat_interval = 0.1f;
+
+    [Header("Main Menu")]
+    [Tooltip("Scene name to load")]
+    public string main_menu_scene_name = "Main Menu";
 
     private InputAction navigate_action;
     private InputAction select_action;
+    private InputAction cancel_action;
 
     private int current_index;
-    private int held_direction; /* -2 up, -1 left, 0 none, +1 right, +2 down */
+    private int held_direction; /* -1 left, 0 none, +1 right */
+    private float next_repeat_time;
 
     private Transform last_parent_highlighted;
-
-    private PlaySound playSound;
+    private PlaySound play_sound;
 
     /*
     * Return the active source transform.
@@ -63,7 +76,7 @@ public sealed class ExtrasUI : MonoBehaviour
     }
 
     /*
-    * Resolve navigate and select actions from reference or PlayerInput.
+    * Resolve navigate, select, and cancel actions from reference or PlayerInput.
     * @param none
     */
     private void ResolveActions()
@@ -85,14 +98,12 @@ public sealed class ExtrasUI : MonoBehaviour
                         }
                     }
                 }
-
                 if (navigate_action == null)
                 {
                     navigate_action = navigate_action_reference.action;
                 }
             }
         }
-
         if (navigate_action == null)
         {
             if (player_input != null)
@@ -119,14 +130,12 @@ public sealed class ExtrasUI : MonoBehaviour
                         }
                     }
                 }
-
                 if (select_action == null)
                 {
                     select_action = select_action_reference.action;
                 }
             }
         }
-
         if (select_action == null)
         {
             if (player_input != null)
@@ -134,6 +143,38 @@ public sealed class ExtrasUI : MonoBehaviour
                 if (player_input.actions != null)
                 {
                     select_action = player_input.actions.FindAction("UI/Submit", false);
+                }
+            }
+        }
+
+        if (cancel_action_reference != null)
+        {
+            if (cancel_action_reference.action != null)
+            {
+                if (player_input != null)
+                {
+                    if (player_input.actions != null)
+                    {
+                        InputAction by_id_cancel = player_input.actions.FindAction(cancel_action_reference.action.id);
+                        if (by_id_cancel != null)
+                        {
+                            cancel_action = by_id_cancel;
+                        }
+                    }
+                }
+                if (cancel_action == null)
+                {
+                    cancel_action = cancel_action_reference.action;
+                }
+            }
+        }
+        if (cancel_action == null)
+        {
+            if (player_input != null)
+            {
+                if (player_input.actions != null)
+                {
+                    cancel_action = player_input.actions.FindAction("UI/Cancel", false);
                 }
             }
         }
@@ -147,16 +188,25 @@ public sealed class ExtrasUI : MonoBehaviour
     {
         current_index = 0;
 
-        playSound = GameObject.FindGameObjectWithTag("Audio").GetComponent<PlaySound>();
+        GameObject audio_go = GameObject.FindGameObjectWithTag("Audio");
+        if (audio_go != null)
+        {
+            play_sound = audio_go.GetComponent<PlaySound>();
+        }
+        else
+        {
+            Debug.LogWarning("Audio object was not found");
+        }
 
         GameObject ui_start = GameObject.FindGameObjectWithTag("UIStart");
         if (ui_start != null)
         {
             Transform first_child = ui_start.transform.GetChild(0);
             transform.SetParent(first_child, false);
-        } else
+        }
+        else
         {
-            Debug.Log("its not working");
+            Debug.LogWarning("UIStart was not found");
         }
 
         ResolveActions();
@@ -183,10 +233,11 @@ public sealed class ExtrasUI : MonoBehaviour
         }
 
         held_direction = 0;
+        next_repeat_time = 0f;
     }
 
     /*
-    * Enable callbacks for navigate and select.
+    * Enable callbacks for navigate, select, and cancel.
     * @param none
     */
     void OnEnable()
@@ -198,7 +249,6 @@ public sealed class ExtrasUI : MonoBehaviour
                 navigate_action.Enable();
             }
             navigate_action.performed += OnNavigatePerformed;
-            navigate_action.canceled += OnNavigateCanceled;
         }
 
         if (select_action != null)
@@ -208,6 +258,15 @@ public sealed class ExtrasUI : MonoBehaviour
                 select_action.Enable();
             }
             select_action.performed += OnSelectPerformed;
+        }
+
+        if (cancel_action != null)
+        {
+            if (!cancel_action.enabled)
+            {
+                cancel_action.Enable();
+            }
+            cancel_action.performed += OnCancelPerformed;
         }
     }
 
@@ -220,7 +279,6 @@ public sealed class ExtrasUI : MonoBehaviour
         if (navigate_action != null)
         {
             navigate_action.performed -= OnNavigatePerformed;
-            navigate_action.canceled -= OnNavigateCanceled;
             if (navigate_action.enabled)
             {
                 navigate_action.Disable();
@@ -236,6 +294,15 @@ public sealed class ExtrasUI : MonoBehaviour
             }
         }
 
+        if (cancel_action != null)
+        {
+            cancel_action.performed -= OnCancelPerformed;
+            if (cancel_action.enabled)
+            {
+                cancel_action.Disable();
+            }
+        }
+
         held_direction = 0;
 
         if (last_parent_highlighted != null)
@@ -246,51 +313,34 @@ public sealed class ExtrasUI : MonoBehaviour
     }
 
     /*
-    * Handle navigate input: single step only when direction changes.
-    * Right=+1, Left=-1, Down=+2, Up=-2. Chooses dominant axis on diagonals.
+    * Handle navigate input with deadzone re arm and schedule repeat.
+    * Steps once when crossing threshold in a direction.
+    * Arms first repeat and subsequent interval while held.
     * @param context Input callback context
     */
     private void OnNavigatePerformed(InputAction.CallbackContext context)
     {
         Vector2 v = context.ReadValue<Vector2>();
-
         float ax = Mathf.Abs(v.x);
-        float ay = Mathf.Abs(v.y);
+
+        if (ax <= horizontal_deadzone)
+        {
+            if (held_direction != 0)
+            {
+                held_direction = 0;
+                next_repeat_time = 0f;
+            }
+            return;
+        }
 
         int dir_code = 0;
-
-        if (ax >= ay)
+        if (v.x > 0f)
         {
-            if (v.x > horizontal_deadzone)
-            {
-                dir_code = 1;
-            }
-            else
-            {
-                if (v.x < -horizontal_deadzone)
-                {
-                    dir_code = -1;
-                }
-            }
+            dir_code = 1;
         }
-/*        else
+        else
         {
-            if (v.y > horizontal_deadzone)
-            {
-                dir_code = 2;  *//* down *//*
-            }
-            else
-            {
-                if (v.y < -horizontal_deadzone)
-                {
-                    dir_code = -2; *//* up *//*
-                }
-            }
-        }*/
-
-        if (dir_code == 0)
-        {
-            return;
+            dir_code = -1;
         }
 
         if (dir_code == held_direction)
@@ -299,50 +349,92 @@ public sealed class ExtrasUI : MonoBehaviour
         }
 
         held_direction = dir_code;
-
         StepIndex(dir_code);
         ReparentToCurrent();
+
+        next_repeat_time = Time.unscaledTime + repeat_first_delay;
     }
 
     /*
-    * Reset direction so the next press in the same direction can step again.
-    * @param context Input callback context
+    * Repeat step while held on the same direction beyond delays.
+    * @param none
     */
-    private void OnNavigateCanceled(InputAction.CallbackContext context)
+    void Update()
     {
-        held_direction = 0;
+        if (held_direction == 0)
+        {
+            return;
+        }
+
+        if (navigate_action == null)
+        {
+            return;
+        }
+
+        Vector2 v = navigate_action.ReadValue<Vector2>();
+        float ax = Mathf.Abs(v.x);
+
+        if (ax <= horizontal_deadzone)
+        {
+            held_direction = 0;
+            next_repeat_time = 0f;
+            return;
+        }
+
+        if (v.x > 0f && held_direction < 0)
+        {
+            held_direction = 0;
+            next_repeat_time = 0f;
+            return;
+        }
+
+        if (v.x < 0f && held_direction > 0)
+        {
+            held_direction = 0;
+            next_repeat_time = 0f;
+            return;
+        }
+
+        if (Time.unscaledTime >= next_repeat_time)
+        {
+            StepIndex(held_direction);
+            ReparentToCurrent();
+            next_repeat_time = Time.unscaledTime + repeat_interval;
+        }
     }
 
     /*
-    * Call RunSceneChange on the parent after restoring its color to white.
+    * Call RunSceneChange on the parent after restoring its state.
     * @param context Input callback context
     */
     private void OnSelectPerformed(InputAction.CallbackContext context)
     {
-        Transform s = Source();
-        if (s == null)
+        return;
+    }
+
+    /*
+    * Load the main menu scene when cancel is pressed.
+    * @param context Input callback context
+    */
+    private void OnCancelPerformed(InputAction.CallbackContext context)
+    {
+        if (play_sound != null)
         {
-            Debug.LogWarning("No source found");
+            play_sound.sfx_menu_select();
+        }
+
+        if (string.IsNullOrEmpty(main_menu_scene_name))
+        {
+            Debug.LogWarning("Main menu scene name is empty");
             return;
         }
 
-        Transform p = s.parent;
-        if (p == null)
-        {
-            Debug.LogWarning("No parent found");
-            return;
-        }
-
-        playSound.sfx_menu_select();
-        ClearHighlightOnParent(p);
-        last_parent_highlighted = null;
-
-        p.SendMessageUpwards("RunSceneChange", SendMessageOptions.DontRequireReceiver);
+        SceneManager.LoadScene(main_menu_scene_name, LoadSceneMode.Single);
     }
 
     /*
     * Advance current index across grandparent children.
-    * @param delta Signed step (use -2,-1,+1,+2)
+    * @param delta Signed step
     */
     public void StepIndex(int delta)
     {
@@ -352,13 +444,11 @@ public sealed class ExtrasUI : MonoBehaviour
             Debug.LogWarning("No source found");
             return;
         }
-
         if (s.parent == null)
         {
             Debug.LogWarning("No parent found");
             return;
         }
-
         if (s.parent.parent == null)
         {
             Debug.LogWarning("No grandparent found");
@@ -373,7 +463,11 @@ public sealed class ExtrasUI : MonoBehaviour
             return;
         }
 
-        playSound.sfx_menu_move();
+        if (play_sound != null)
+        {
+            play_sound.sfx_menu_move();
+        }
+
         int next = current_index + delta;
 
         if (wrap_around)
@@ -401,7 +495,8 @@ public sealed class ExtrasUI : MonoBehaviour
     }
 
     /*
-    * Reparent the selector under the current child and update highlights.
+    * Reparent the selector under the current child and toggle parents safely.
+    * Enables the target first, moves the selector, then disables the previous.
     * @param none
     */
     public void ReparentToCurrent()
@@ -412,13 +507,11 @@ public sealed class ExtrasUI : MonoBehaviour
             Debug.LogWarning("No source found");
             return;
         }
-
         if (s.parent == null)
         {
             Debug.LogWarning("No parent found");
             return;
         }
-
         if (s.parent.parent == null)
         {
             Debug.LogWarning("No grandparent found");
@@ -437,35 +530,56 @@ public sealed class ExtrasUI : MonoBehaviour
         {
             current_index = 0;
         }
-
         if (current_index > count - 1)
         {
             current_index = count - 1;
         }
 
+        Transform previous_parent = s.parent;                /* cache before move */
         Transform target = gp.GetChild(current_index);
 
-        if (last_parent_highlighted != null)
+        /* 1) ensure target is active BEFORE moving */
+        GameObject target_go = target.gameObject;
+        if (target_go != null)
         {
-            ClearHighlightOnParent(last_parent_highlighted);
+            if (target_go.activeSelf == false)
+            {
+                target_go.SetActive(true);
+            }
         }
 
+        /* 2) move under the target so disabling previous will not disable us */
         s.SetParent(target, false);
         s.localPosition = Vector3.zero;
 
-        if (reset_rotation_and_scale)
+        if (reset_rotation_and_scale == true)
         {
             s.localRotation = Quaternion.identity;
             s.localScale = Vector3.one;
         }
 
-        ApplyHighlightToParent(target);
+        /* 3) now it is safe to disable the previous parent */
+        if (previous_parent != null)
+        {
+            if (previous_parent != target)
+            {
+                GameObject prev_go = previous_parent.gameObject;
+                if (prev_go != null)
+                {
+                    if (prev_go.activeSelf == true)
+                    {
+                        prev_go.SetActive(false);
+                    }
+                }
+            }
+        }
+
         last_parent_highlighted = target;
     }
 
     /*
-    * Set parent SpriteRenderer to highlight color.
-    * @param parent_target Parent to colorize
+    * Activate the parent GameObject while selected.
+    * @param parent_target Parent to activate
     */
     private void ApplyHighlightToParent(Transform parent_target)
     {
@@ -474,17 +588,17 @@ public sealed class ExtrasUI : MonoBehaviour
             return;
         }
 
-        GameObject sr = parent_target.gameObject;
-        if (sr != null)
+        GameObject go = parent_target.gameObject;
+        if (go != null)
         {
-            sr.SetActive(true);
+            go.SetActive(true);
             return;
         }
     }
 
     /*
-    * Restore parent SpriteRenderer to white.
-    * @param parent_target Parent to restore
+    * Deactivate the parent GameObject when leaving.
+    * @param parent_target Parent to deactivate
     */
     private void ClearHighlightOnParent(Transform parent_target)
     {
@@ -493,10 +607,10 @@ public sealed class ExtrasUI : MonoBehaviour
             return;
         }
 
-        GameObject sr = parent_target.gameObject;
-        if (sr != null)
+        GameObject go = parent_target.gameObject;
+        if (go != null)
         {
-            sr.SetActive(false);
+            go.SetActive(false);
             return;
         }
     }

@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8819973871023420539}
   - component: {fileID: 5119189741918322458}
-  - component: {fileID: 3205596176881804827}
+  - component: {fileID: 8292429543281138197}
   m_Layer: 0
   m_Name: CharacterController_Extras
   m_TagString: Untagged
@@ -63,7 +63,7 @@ MonoBehaviour:
   m_DefaultActionMap: 
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
---- !u!114 &3205596176881804827
+--- !u!114 &8292429543281138197
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -72,13 +72,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 5290896791253208548}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4856085d734bd614da49939de1ed4211, type: 3}
+  m_Script: {fileID: 11500000, guid: cb8a42ad2f5675245b5b70ae67eeb4e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExtrasUI
   connected: {fileID: 0}
   navigate_action_reference: {fileID: -8784545083839296357, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
-  select_action_reference: {fileID: 0}
+  select_action_reference: {fileID: 392368643174621059, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  cancel_action_reference: {fileID: 7727032971491509709, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   wrap_around: 1
   horizontal_deadzone: 0.5
-  reset_rotation_and_scale: 0
-  highlight_color: {r: 1, g: 0.92, b: 0.35, a: 1}
+  reset_rotation_and_scale: 1
+  main_menu_scene_name: MainMenu
