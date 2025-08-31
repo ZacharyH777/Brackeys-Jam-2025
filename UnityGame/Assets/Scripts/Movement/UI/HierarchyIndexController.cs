@@ -13,44 +13,54 @@ public sealed class HierarchyIndexController : MonoBehaviour
 
     [Header("Indexing")]
     [Min(0)] public int start_index = 0;
-    [Tooltip("Wrap around child list when true else clamp")]
+    [Tooltip("Wrap around child list")]
     public bool wrap_around = true;
 
     [Header("UI Input")]
-    [Tooltip("Assign UI navigate vector2")]
+    [Tooltip("Assign UI navigate")]
     public InputActionReference navigate_action_reference;
-
-    [Tooltip("Assign UI submit or select")]
+    [Tooltip("Assign UI submit")]
     public InputActionReference select_action_reference;
-
-    [Tooltip("Assign start action for game start")]
+    [Tooltip("Assign game start")]
     public InputActionReference start_game_action_reference;
-
     [Tooltip("Assign UI cancel")]
     public InputActionReference cancel_action_reference;
 
     [Header("Cancel Hold")]
-    [Tooltip("Seconds to hold cancel to go back")]
+    [Tooltip("Seconds to hold cancel")]
     public float cancel_hold_seconds = 3f;
-
-    [Tooltip("Optional scene to load on long cancel")]
+    [Tooltip("Scene to load on cancel")]
     public string back_out_scene_name = "";
-
-    [Tooltip("Invoked on long cancel when no scene is set")]
+    [Tooltip("Invoked on long cancel")]
     public UnityEvent on_long_cancel;
 
     [Header("Navigate Gate")]
-    [Tooltip("Deadzone for horizontal navigate decision")]
+    [Tooltip("Horizontal deadzone")]
     [Range(0f, 1f)] public float horizontal_deadzone = 0.5f;
-
-    [Tooltip("Delay before repeating while held seconds")]
+    [Tooltip("Delay before repeat")]
     public float repeat_delay = 0.45f;
-
-    [Tooltip("Interval between repeats seconds")]
+    [Tooltip("Interval between repeats")]
     public float repeat_rate = 0.10f;
-
-    [Tooltip("Reset local rotation and scale when reparenting")]
+    [Tooltip("Reset rotation and scale")]
     public bool reset_rotation_and_scale = false;
+
+    [Header("Sprite Target")]
+    [Tooltip("Tag for player one")]
+    public string p1_spawn_tag = "P1_Spawn";
+    [Tooltip("Tag for player two")]
+    public string p2_spawn_tag = "P2_Spawn";
+    [Tooltip("Optional explicit target")]
+    public SpriteRenderer selection_sprite_target;
+
+    [Header("Preview Sprites")]
+    [Tooltip("Sprite for index 0")]
+    public Sprite sprite_index_0;
+    [Tooltip("Sprite for index 1")]
+    public Sprite sprite_index_1;
+    [Tooltip("Sprite for index 2")]
+    public Sprite sprite_index_2;
+    [Tooltip("Sprite for index 3")]
+    public Sprite sprite_index_3;
 
     private int current_index;
     private PlayerInput player_input;
@@ -67,10 +77,11 @@ public sealed class HierarchyIndexController : MonoBehaviour
     private bool cancel_hold_active;
     private float cancel_hold_start_time = -1f;
 
-    private PlaySound playSound;
+    private PlaySound play_sound;
 
     /*
-    Return the transform to control. Uses connected when present else this transform.
+    * Return the transform to control.
+    * Uses connected when present else this transform.
     * @param none
     */
     private Transform SourceTransform
@@ -86,7 +97,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
     }
 
     /*
-    Return the parent of the source transform.
+    * Return the parent of the source transform.
     * @param none
     */
     public Transform ParentTransform
@@ -103,7 +114,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
     }
 
     /*
-    Return the grandparent of the source transform.
+    * Return the grandparent of the source transform.
     * @param none
     */
     public Transform GrandparentTransform
@@ -120,7 +131,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
     }
 
     /*
-    Initialize current index and resolve input actions.
+    * Initialize index, audio, actions, and sprite target.
     * @param none
     */
     void Awake()
@@ -128,27 +139,33 @@ public sealed class HierarchyIndexController : MonoBehaviour
         current_index = Mathf.Max(0, start_index);
         player_input = GetComponent<PlayerInput>();
 
-        playSound = GameObject.FindGameObjectWithTag("Audio").GetComponent<PlaySound>();
+        GameObject audio_go = GameObject.FindGameObjectWithTag("Audio");
+        if (audio_go != null)
+        {
+            play_sound = audio_go.GetComponent<PlaySound>();
+        }
 
-        navigate_action = ResolveActionFromReference(navigate_action_reference, player_input);
+        Resolve_selection_sprite_target_by_tag();
+
+        navigate_action = Resolve_action_from_reference(navigate_action_reference, player_input);
         if (navigate_action == null && player_input != null && player_input.actions != null)
         {
             navigate_action = player_input.actions.FindAction("UI/Navigate", false);
         }
 
-        select_action = ResolveActionFromReference(select_action_reference, player_input);
+        select_action = Resolve_action_from_reference(select_action_reference, player_input);
         if (select_action == null && player_input != null && player_input.actions != null)
         {
             select_action = player_input.actions.FindAction("UI/Submit", false);
         }
 
-        start_action = ResolveActionFromReference(start_game_action_reference, player_input);
+        start_action = Resolve_action_from_reference(start_game_action_reference, player_input);
         if (start_action == null && player_input != null && player_input.actions != null)
         {
             start_action = player_input.actions.FindAction("UI/Start", false);
         }
 
-        cancel_action = ResolveActionFromReference(cancel_action_reference, player_input);
+        cancel_action = Resolve_action_from_reference(cancel_action_reference, player_input);
         if (cancel_action == null && player_input != null && player_input.actions != null)
         {
             cancel_action = player_input.actions.FindAction("UI/Cancel", false);
@@ -156,7 +173,19 @@ public sealed class HierarchyIndexController : MonoBehaviour
     }
 
     /*
-    Enable actions and seed the current index from the grandparent count.
+    * Safety re-resolve sprite target after PlayerInput is ready.
+    * @param none
+    */
+    void Start()
+    {
+        if (selection_sprite_target == null)
+        {
+            Resolve_selection_sprite_target_by_tag();
+        }
+    }
+
+    /*
+    * Enable actions and seed current index.
     * @param none
     */
     void OnEnable()
@@ -167,8 +196,8 @@ public sealed class HierarchyIndexController : MonoBehaviour
             {
                 navigate_action.Enable();
             }
-            navigate_action.performed += OnNavigatePerformed;
-            navigate_action.canceled += OnNavigateCanceled;
+            navigate_action.performed += On_navigate_performed;
+            navigate_action.canceled += On_navigate_canceled;
         }
 
         if (select_action != null)
@@ -177,7 +206,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
             {
                 select_action.Enable();
             }
-            select_action.performed += OnSelectPerformed;
+            select_action.performed += On_select_performed;
         }
 
         if (start_action != null)
@@ -186,7 +215,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
             {
                 start_action.Enable();
             }
-            start_action.performed += OnStartPerformed;
+            start_action.performed += On_start_performed;
         }
 
         if (cancel_action != null)
@@ -195,8 +224,8 @@ public sealed class HierarchyIndexController : MonoBehaviour
             {
                 cancel_action.Enable();
             }
-            cancel_action.started += OnCancelStarted;
-            cancel_action.canceled += OnCancelCanceled;
+            cancel_action.started += On_cancel_started;
+            cancel_action.canceled += On_cancel_canceled;
         }
 
         Transform gp = GrandparentTransform;
@@ -207,18 +236,20 @@ public sealed class HierarchyIndexController : MonoBehaviour
                 current_index = Mathf.Clamp(start_index, 0, gp.childCount - 1);
             }
         }
+
+        Update_sprite_preview_from_current();
     }
 
     /*
-    Disable actions and clear held state.
+    * Disable actions and clear held state.
     * @param none
     */
     void OnDisable()
     {
         if (navigate_action != null)
         {
-            navigate_action.performed -= OnNavigatePerformed;
-            navigate_action.canceled -= OnNavigateCanceled;
+            navigate_action.performed -= On_navigate_performed;
+            navigate_action.canceled -= On_navigate_canceled;
             if (navigate_action.enabled)
             {
                 navigate_action.Disable();
@@ -227,7 +258,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
 
         if (select_action != null)
         {
-            select_action.performed -= OnSelectPerformed;
+            select_action.performed -= On_select_performed;
             if (select_action.enabled)
             {
                 select_action.Disable();
@@ -236,7 +267,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
 
         if (start_action != null)
         {
-            start_action.performed -= OnStartPerformed;
+            start_action.performed -= On_start_performed;
             if (start_action.enabled)
             {
                 start_action.Disable();
@@ -245,8 +276,8 @@ public sealed class HierarchyIndexController : MonoBehaviour
 
         if (cancel_action != null)
         {
-            cancel_action.started -= OnCancelStarted;
-            cancel_action.canceled -= OnCancelCanceled;
+            cancel_action.started -= On_cancel_started;
+            cancel_action.canceled -= On_cancel_canceled;
             if (cancel_action.enabled)
             {
                 cancel_action.Disable();
@@ -260,7 +291,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
     }
 
     /*
-    Drive repeat navigation when a direction is held.
+    * Drive repeat navigation while a direction is held.
     * @param none
     */
     void Update()
@@ -269,7 +300,8 @@ public sealed class HierarchyIndexController : MonoBehaviour
         {
             return;
         }
-        if (!InputAllowedForThisInstance())
+
+        if (!Input_allowed_for_this_instance())
         {
             return;
         }
@@ -278,24 +310,25 @@ public sealed class HierarchyIndexController : MonoBehaviour
         {
             if (Time.unscaledTime >= next_repeat_time)
             {
-                StepIndex(held_direction);
-                ReparentConnectedToCurrent();
+                Step_index(held_direction);
+                Reparent_connected_to_current();
                 next_repeat_time = Time.unscaledTime + repeat_rate;
             }
         }
     }
 
     /*
-    Handle navigate input and start the repeat timer.
-    * @param context Input context with a 2D vector
+    * Handle navigate input and start repeat timer.
+    * @param context Input context
     */
-    private void OnNavigatePerformed(InputAction.CallbackContext context)
+    private void On_navigate_performed(InputAction.CallbackContext context)
     {
         if (is_locked)
         {
             return;
         }
-        if (!InputAllowedForThisInstance())
+
+        if (!Input_allowed_for_this_instance())
         {
             return;
         }
@@ -320,8 +353,8 @@ public sealed class HierarchyIndexController : MonoBehaviour
             if (direction != held_direction)
             {
                 held_direction = direction;
-                StepIndex(held_direction);
-                ReparentConnectedToCurrent();
+                Step_index(held_direction);
+                Reparent_connected_to_current();
                 next_repeat_time = Time.unscaledTime + repeat_delay;
             }
         }
@@ -333,39 +366,43 @@ public sealed class HierarchyIndexController : MonoBehaviour
     }
 
     /*
-    Stop repeating when navigate is released.
+    * Stop repeating on navigate release.
     * @param context Input context
     */
-    private void OnNavigateCanceled(InputAction.CallbackContext context)
+    private void On_navigate_canceled(InputAction.CallbackContext context)
     {
         held_direction = 0;
         next_repeat_time = float.PositiveInfinity;
     }
 
     /*
-    Assign the selected child name to the global character slots and lock input.
+    * Select current option, set preview, and lock input.
     * @param context Input context
     */
-    private void OnSelectPerformed(InputAction.CallbackContext context)
+    private void On_select_performed(InputAction.CallbackContext context)
     {
         if (is_locked)
         {
             return;
         }
-        if (!InputAllowedForThisInstance())
+
+        if (!Input_allowed_for_this_instance())
         {
             return;
         }
 
-        Transform pick = GetCurrentGrandparentChild();
+        Transform pick = Get_current_grandparent_child();
         if (pick == null)
         {
             return;
         }
 
         string chosen_name = pick.name;
-        playSound.sfx_menu_select();
 
+        if (play_sound != null)
+        {
+            play_sound.sfx_menu_select();
+        }
 
         if (CharacterSelect.is_singleplayer)
         {
@@ -406,23 +443,26 @@ public sealed class HierarchyIndexController : MonoBehaviour
             }
         }
 
+        Update_sprite_preview_from_current();
+
         is_locked = true;
         last_selected_name = chosen_name;
-        ReparentConnectedToCurrent();
+        Reparent_connected_to_current();
 
         int player_index_log = -1;
         if (player_input != null)
         {
             player_index_log = player_input.playerIndex;
         }
+
         Debug.Log("Player " + player_index_log + " selected " + chosen_name);
     }
 
     /*
-    Start the game in the selected mode.
+    * Start the game in selected mode.
     * @param context Input context
     */
-    private void OnStartPerformed(InputAction.CallbackContext context)
+    private void On_start_performed(InputAction.CallbackContext context)
     {
         if (CharacterSelect.is_singleplayer)
         {
@@ -435,27 +475,32 @@ public sealed class HierarchyIndexController : MonoBehaviour
     }
 
     /*
-    Begin measuring cancel hold duration.
+    * Begin measuring cancel hold time.
     * @param context Input context
     */
-    private void OnCancelStarted(InputAction.CallbackContext context)
+    private void On_cancel_started(InputAction.CallbackContext context)
     {
-        if (!InputAllowedForThisInstance())
+        if (!Input_allowed_for_this_instance())
         {
             return;
         }
+
         cancel_hold_active = true;
         cancel_hold_start_time = Time.unscaledTime;
-        playSound.sfx_menu_cancel();
+
+        if (play_sound != null)
+        {
+            play_sound.sfx_menu_cancel();
+        }
     }
 
     /*
-    Complete cancel hold. Short tap clears selection when locked. Long hold backs out.
+    * Finish cancel. Short tap clears selection. Long hold backs out.
     * @param context Input context
     */
-    private void OnCancelCanceled(InputAction.CallbackContext context)
+    private void On_cancel_canceled(InputAction.CallbackContext context)
     {
-        if (!InputAllowedForThisInstance())
+        if (!Input_allowed_for_this_instance())
         {
             cancel_hold_active = false;
             cancel_hold_start_time = -1f;
@@ -473,7 +518,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
 
         if (held >= cancel_hold_seconds)
         {
-            TriggerBackOut();
+            Trigger_back_out();
             return;
         }
 
@@ -507,6 +552,7 @@ public sealed class HierarchyIndexController : MonoBehaviour
                         {
                             CharacterSelect.p1_character = "";
                         }
+
                         if (CharacterSelect.p2_character == last_selected_name)
                         {
                             CharacterSelect.p2_character = "";
@@ -524,10 +570,10 @@ public sealed class HierarchyIndexController : MonoBehaviour
     }
 
     /*
-    Perform back out behavior for long cancel.
+    * Perform back out on long cancel.
     * @param none
     */
-    private void TriggerBackOut()
+    private void Trigger_back_out()
     {
         if (!string.IsNullOrEmpty(back_out_scene_name))
         {
@@ -545,10 +591,10 @@ public sealed class HierarchyIndexController : MonoBehaviour
     }
 
     /*
-    Move current index by delta with wrap or clamp.
+    * Move current index by delta with wrap or clamp.
     * @param delta Signed step amount
     */
-    public void StepIndex(int delta)
+    public void Step_index(int delta)
     {
         int count = 0;
         Transform gp = GrandparentTransform;
@@ -557,7 +603,10 @@ public sealed class HierarchyIndexController : MonoBehaviour
             count = gp.childCount;
         }
 
-        playSound.sfx_menu_move();
+        if (play_sound != null)
+        {
+            play_sound.sfx_menu_move();
+        }
 
         if (count <= 0)
         {
@@ -578,14 +627,15 @@ public sealed class HierarchyIndexController : MonoBehaviour
         {
             next = Mathf.Clamp(next, 0, count - 1);
         }
+
         current_index = next;
     }
 
     /*
-    Get the current child under the grandparent using the current index.
+    * Get the current child under the grandparent.
     * @param none
     */
-    public Transform GetCurrentGrandparentChild()
+    public Transform Get_current_grandparent_child()
     {
         Transform gp = GrandparentTransform;
         if (gp == null)
@@ -606,23 +656,27 @@ public sealed class HierarchyIndexController : MonoBehaviour
     }
 
     /*
-    Reparent the controlled transform to the current selection and reset local values.
+    * Reparent the controlled transform to the current selection.
+    * Optionally reset local rotation and scale.
+    * Also refresh preview sprite from index.
     * @param none
     */
-    public Transform ReparentConnectedToCurrent()
+    public Transform Reparent_connected_to_current()
     {
-        Transform target = GetCurrentGrandparentChild();
+        Transform target = Get_current_grandparent_child();
         Transform src = SourceTransform;
+
         if (target == null)
         {
             return null;
         }
+
         if (src == null)
         {
             return null;
         }
 
-        src.SetParent(target, worldPositionStays: false);
+        src.SetParent(target, false);
         src.localPosition = Vector3.zero;
 
         if (reset_rotation_and_scale)
@@ -630,20 +684,23 @@ public sealed class HierarchyIndexController : MonoBehaviour
             src.localRotation = Quaternion.identity;
             src.localScale = Vector3.one;
         }
+
+        Update_sprite_preview_from_current();
         return target;
     }
 
     /*
-    Find an action in the owner asset by reference.
+    * Resolve an action from a reference using the owner asset.
     * @param reference Input action reference
-    * @param owner Player input owning the asset
+    * @param owner Player input
     */
-    private static InputAction ResolveActionFromReference(InputActionReference reference, PlayerInput owner)
+    private static InputAction Resolve_action_from_reference(InputActionReference reference, PlayerInput owner)
     {
         if (reference == null)
         {
             return null;
         }
+
         if (reference.action == null)
         {
             return null;
@@ -668,10 +725,10 @@ public sealed class HierarchyIndexController : MonoBehaviour
     }
 
     /*
-    Only allow input from player one in singleplayer.
+    * Only allow input from player one in singleplayer.
     * @param none
     */
-    private bool InputAllowedForThisInstance()
+    private bool Input_allowed_for_this_instance()
     {
         if (!CharacterSelect.is_singleplayer)
         {
@@ -689,5 +746,121 @@ public sealed class HierarchyIndexController : MonoBehaviour
             return true;
         }
         return false;
+    }
+
+    /*
+    * Resolve the selection sprite target by tag using player index.
+    * @param none
+    */
+    private void Resolve_selection_sprite_target_by_tag()
+    {
+        if (selection_sprite_target != null)
+        {
+            return;
+        }
+
+        int idx = -1;
+        if (player_input != null)
+        {
+            idx = player_input.playerIndex;
+        }
+
+        string lookup_tag = "";
+        if (idx == 0)
+        {
+            lookup_tag = p1_spawn_tag;
+        }
+        else
+        {
+            lookup_tag = p2_spawn_tag;
+        }
+
+        if (string.IsNullOrEmpty(lookup_tag))
+        {
+            return;
+        }
+
+        GameObject found = GameObject.FindGameObjectWithTag(lookup_tag);
+        if (found == null)
+        {
+            Debug.LogWarning("Selection sprite target was not found");
+            return;
+        }
+
+        selection_sprite_target = found.GetComponentInChildren<SpriteRenderer>(true);
+        if (selection_sprite_target == null)
+        {
+            Debug.LogWarning("Selection sprite target is missing SpriteRenderer");
+        }
+    }
+
+    /*
+    * Update preview sprite using the current index.
+    * Uses four public sprites 0 to 3.
+    * @param none
+    */
+    private void Update_sprite_preview_from_current()
+    {
+        if (selection_sprite_target == null)
+        {
+            return;
+        }
+
+        Sprite s = Get_preview_sprite_for_index(current_index);
+        if (s == null)
+        {
+            return;
+        }
+
+        selection_sprite_target.sprite = s;
+    }
+
+    /*
+    * Map an index to one of four public sprites.
+    * Clamps to 0..3.
+    * @param index Zero based index
+    */
+    private Sprite Get_preview_sprite_for_index(int index)
+    {
+        int clamped = index;
+        if (clamped < 0)
+        {
+            clamped = 0;
+        }
+        else
+        {
+            Transform gp = GrandparentTransform;
+            if (gp != null)
+            {
+                int count = gp.childCount;
+                if (count > 0)
+                {
+                    clamped = Mathf.Clamp(clamped, 0, count - 1);
+                }
+            }
+        }
+
+        if (clamped == 0)
+        {
+            return sprite_index_0;
+        }
+        else
+        {
+            if (clamped == 1)
+            {
+                return sprite_index_1;
+            }
+            else
+            {
+                if (clamped == 2)
+                {
+                    return sprite_index_2;
+                }
+                else
+                {
+                    return sprite_index_3;
+                }
+            }
+        }
     }
 }

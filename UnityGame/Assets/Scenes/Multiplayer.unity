@@ -255,8 +255,8 @@ MonoBehaviour:
     upCPUPrefab: {fileID: 0}
     downCPUPrefab: {fileID: 0}
   - characterName: DKLA
-    upPrefabWithPlayerInput: {fileID: 8846360276859056810, guid: a9c6d9b6f0d3e5e40a3a32be8348af13, type: 3}
-    downPrefabWithPlayerInput: {fileID: 4228421582200542465, guid: fb6fd78bc31276a4db508a70d16e66f8, type: 3}
+    upPrefabWithPlayerInput: {fileID: 1355739925041800451, guid: 7170e644fc659e04b8ca79883263fa67, type: 3}
+    downPrefabWithPlayerInput: {fileID: 1265189265622343051, guid: 0126dddedebdb464b81652110b121a8a, type: 3}
     upCPUPrefab: {fileID: 0}
     downCPUPrefab: {fileID: 0}
   - characterName: JohnPong
@@ -661,8 +661,8 @@ MonoBehaviour:
     upCPUPrefab: {fileID: 0}
     downCPUPrefab: {fileID: 0}
   - characterName: DKLA
-    upPrefabWithPlayerInput: {fileID: 8846360276859056810, guid: a9c6d9b6f0d3e5e40a3a32be8348af13, type: 3}
-    downPrefabWithPlayerInput: {fileID: 4228421582200542465, guid: fb6fd78bc31276a4db508a70d16e66f8, type: 3}
+    upPrefabWithPlayerInput: {fileID: 1355739925041800451, guid: 7170e644fc659e04b8ca79883263fa67, type: 3}
+    downPrefabWithPlayerInput: {fileID: 1265189265622343051, guid: 0126dddedebdb464b81652110b121a8a, type: 3}
     upCPUPrefab: {fileID: 0}
     downCPUPrefab: {fileID: 0}
   - characterName: JohnPong

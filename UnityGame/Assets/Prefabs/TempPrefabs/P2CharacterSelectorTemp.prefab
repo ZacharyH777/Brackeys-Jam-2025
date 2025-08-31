@@ -219,3 +219,10 @@ MonoBehaviour:
   repeat_delay: 0.45
   repeat_rate: 0.1
   reset_rotation_and_scale: 0
+  p1_spawn_tag: P1_Spawn
+  p2_spawn_tag: P2_Spawn
+  selection_sprite_target: {fileID: 0}
+  sprite_index_0: {fileID: 6765680445205551167, guid: e51a2feadbc90844a837495258624aa3, type: 3}
+  sprite_index_1: {fileID: -9059261814959853655, guid: 23c3014963fccb04983ff8c815587620, type: 3}
+  sprite_index_2: {fileID: -1038203315625620841, guid: 6b1f12a77ac1873459fd8452233943d1, type: 3}
+  sprite_index_3: {fileID: 1335420123225850400, guid: ab842685e28d9b84fb21e8667ea76310, type: 3}
