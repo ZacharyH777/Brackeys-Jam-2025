@@ -811,6 +811,7 @@ GameObject:
   - component: {fileID: 707904576}
   - component: {fileID: 707904578}
   - component: {fileID: 707904579}
+  - component: {fileID: 707904580}
   m_Layer: 0
   m_Name: dojofloor_0
   m_TagString: Untagged
@@ -950,6 +951,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SurfaceZone
   zone_type: 1
+--- !u!114 &707904580
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 707904575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73c8eaee3b68d6a459ebeccba395a25a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  newSprite1: {fileID: -3555848278325546865, guid: ceffc5fd8ed0a37438d39fbd92cbb0e1, type: 3}
+  newSprite2: {fileID: 3094738862518195532, guid: 287a2ee802fc7f240889528aef9f61cf, type: 3}
+  newSprite3: {fileID: -1320712951131164053, guid: e4b530a3fcd225b4b8f892baf2961aa4, type: 3}
+  newSprite4: {fileID: -1320712951131164053, guid: e4b530a3fcd225b4b8f892baf2961aa4, type: 3}
 --- !u!1 &768462303
 GameObject:
   m_ObjectHideFlags: 0
@@ -1631,6 +1648,7 @@ GameObject:
   - component: {fileID: 1269629392}
   - component: {fileID: 1269629394}
   - component: {fileID: 1269629395}
+  - component: {fileID: 1269629396}
   m_Layer: 0
   m_Name: pptable_0
   m_TagString: Untagged
@@ -1771,6 +1789,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SurfaceZone
   zone_type: 0
+--- !u!114 &1269629396
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1269629391}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73c8eaee3b68d6a459ebeccba395a25a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChangeSpriteBasedOnChar
+  newSprite1: {fileID: -4982004779702897765, guid: 77f5995eb763d7d4a8bbbb12fbcd17ad, type: 3}
+  newSprite2: {fileID: 2621553059710010474, guid: 1d7bb4de26545a04b962f01c5d725fb0, type: 3}
+  newSprite3: {fileID: -4810790828347359346, guid: 7b6485cb100054f41aefbbb1111f9da9, type: 3}
+  newSprite4: {fileID: -4810790828347359346, guid: 7b6485cb100054f41aefbbb1111f9da9, type: 3}
 --- !u!1001 &1323911714
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2335,7 +2369,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: f99f1d80f9568434b91d614b2ad56ee8, type: 3}
+  m_Resource: {fileID: 8300000, guid: 2288ab9de97fd824a963aa64147daf34, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 0.375
   m_Pitch: 1

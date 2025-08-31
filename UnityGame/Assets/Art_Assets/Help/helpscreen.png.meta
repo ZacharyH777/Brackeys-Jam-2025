@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: e4b530a3fcd225b4b8f892baf2961aa4
+guid: 565b81de40604114689512c7180c9f4f
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -1320712951131164053
-    second: metalfloortile_0
+      213: -284484418373724652
+    second: helpscreen_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -40,9 +40,9 @@ TextureImporter:
     filterMode: 1
     aniso: 1
     mipBias: 0
-    wrapU: 0
-    wrapV: 0
-    wrapW: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: metalfloortile_0
+      name: helpscreen_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 2048
-        height: 2048
+        x: 22
+        y: 35
+        width: 973
+        height: 973
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b62b1918192ebade0800000000000000
-      internalID: -1320712951131164053
+      spriteID: 41653b2cdee4d0cf0800000000000000
+      internalID: -284484418373724652
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      metalfloortile_0: -1320712951131164053
+      helpscreen_0: -284484418373724652
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
