@@ -1,7 +1,8 @@
 ﻿using UnityEngine;
-using IKSystem.Data;
+using Unity.Mathematics;
+using RunstarSystems.IKSystem.Data;
 
-namespace IKSystem.Builders
+namespace RunstarSystems.IKSystem.Builders
 {
     public readonly struct IkSubChainBuildSettings
     {
@@ -10,14 +11,14 @@ namespace IKSystem.Builders
 
         public readonly bool joints_virtual;
         public readonly bool first_is_joint;
+        public readonly bool alternating_topology;
 
         public readonly JointModel joint_model;
-        public readonly Vector3 primary_axis;
-        public readonly Vector3 bend_normal;
+        public readonly float3 primary_axis;
+        public readonly float3 bend_normal;
         public readonly JointBranchPreference branch_pref;
         public readonly float branch_deadband;
         public readonly float max_delta;
-        public readonly bool alternating_topology;
 
         public readonly bool compute_length;
         public readonly float bone_tolerance;
@@ -30,33 +31,33 @@ namespace IKSystem.Builders
         public readonly int max_iterations;
         public readonly float tolerance;
 
-        public IkSubChainBuildSettings(IkSubChainBuilder builder)
+        // Constructor maps from the Builder's Definition class
+        public IkSubChainBuildSettings(IkChainBuilder.SubChainDefinition def)
         {
-            start = builder.start;
-            end = builder.end;
+            start = def.start;
+            end = def.end;
 
-            joints_virtual = builder.joints_virtual;
-            first_is_joint = builder.first_is_joint;
-            alternating_topology = builder.alternating_topology;
+            joints_virtual = def.jointsVirtual;
+            first_is_joint = def.firstIsJoint;
+            alternating_topology = def.alternatingTopology;
 
-            joint_model = builder.joint_model;
-            primary_axis = builder.primary_axis;
-            bend_normal = builder.bend_normal;
-            branch_pref = builder.branch_pref;
-            branch_deadband = builder.branch_deadband;
-            max_delta = builder.max_delta;
+            joint_model = def.jointModel;
+            primary_axis = def.primaryAxis;
+            bend_normal = def.bendNormal;
+            branch_pref = def.branchPref;
+            branch_deadband = def.branchDeadband;
+            max_delta = def.maxDelta;
 
-            compute_length = builder.compute_length;
-            bone_tolerance = builder.bone_tolerance;
-            bone_weight = builder.bone_weight;
+            compute_length = def.computeLength;
+            bone_tolerance = def.boneTolerance;
+            bone_weight = def.boneWeight;
 
-            phase = builder.phase;
-            root_policy = builder.root_policy;
-            anchor_mode = builder.anchor_mode;
-            pass_order = builder.pass_order;
-            max_iterations = builder.max_iterations;
-            tolerance = builder.tolerance;
+            phase = def.phase;
+            root_policy = def.rootPolicy;
+            anchor_mode = def.anchorMode;
+            pass_order = def.passOrder;
+            max_iterations = def.maxIterations;
+            tolerance = def.tolerance;
         }
-
     }
 }

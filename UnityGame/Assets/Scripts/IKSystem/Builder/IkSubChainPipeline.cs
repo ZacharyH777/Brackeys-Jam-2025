@@ -1,18 +1,23 @@
 ﻿using UnityEngine;
-using IKSystem.Data;
-using IKSystem.Builders.Path;
-using IKSystem.Safety;
+using RunstarSystems.IKSystem.Data;
+using RunstarSystems.IKSystem.Builders.Path;
+using RunstarSystems.IKSystem.Safety;
 
-namespace IKSystem.Builders
+namespace RunstarSystems.IKSystem.Builders
 {
     public static class IkSubChainBuildPipeline
     {
         public static bool TryBuild(
+            string chainName,
+            int subChainIndex,
             in IkSubChainBuildSettings settings,
-            out IkSubChainBuildResult result,
+            out IkSubChainData result,
+            out Transform[] path,
             out string error_message)
         {
-            result = new IkSubChainBuildResult();
+            // Initialize the out parameters
+            result = new IkSubChainData { name = chainName };
+            path = null; 
             error_message = null;
 
             Transform start_root = settings.start;
@@ -22,7 +27,7 @@ namespace IKSystem.Builders
                 return false;
             }
 
-            Transform[] path;
+            // Path is populated here and will bubble up to the IkChainBuilder
             if (!ChainPathResolver.TryBuildPath(start_root, settings.end, out path, out error_message))
             {
                 return false;
@@ -33,7 +38,7 @@ namespace IKSystem.Builders
                 return false;
             }
 
-            if (!ChainLayoutBuilder.TryBuild(in settings, path, out result, out error_message))
+            if (!ChainLayoutBuilder.TryBuild(in settings, subChainIndex, path, ref result, out error_message))
             {
                 return false;
             }

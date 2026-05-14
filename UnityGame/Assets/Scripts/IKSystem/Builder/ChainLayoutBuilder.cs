@@ -1,47 +1,37 @@
 ﻿using UnityEngine;
-using IKSystem.Data;
-using IKSystem.Safety;
+using Unity.Mathematics;
+using RunstarSystems.IKSystem.Data;
+using RunstarSystems.IKSystem.Safety;
 
-namespace IKSystem.Builders
+namespace RunstarSystems.IKSystem.Builders
 {
     public static class ChainLayoutBuilder
     {
         private const float epsilon = 1e-12f;
         private const float default_tolerance = 0.001f;
 
-        /* Build chain data from a validated path using the selected topology.
-         * @param settings build settings
-         * @param path validated hierarchy path
-         * @param result built data
-         * @param error_message failure reason
-         */
         public static bool TryBuild(
             in IkSubChainBuildSettings settings,
+            int subChainIndex,
             Transform[] path,
-            out IkSubChainBuildResult result,
+            ref IkSubChainData result,
             out string error_message)
         {
             if (settings.alternating_topology)
             {
-                return TryBuildAlternating(in settings, path, out result, out error_message);
+                return TryBuildAlternating(in settings, subChainIndex, path, ref result, out error_message);
             }
 
-            return TryBuildNonAlternating(in settings, path, out result, out error_message);
+            return TryBuildNonAlternating(in settings, subChainIndex, path, ref result, out error_message);
         }
 
-        /* Build arrays from an alternating bone/joint path.
-         * @param settings build settings
-         * @param path validated path
-         * @param result built data
-         * @param error_message failure reason
-         */
         public static bool TryBuildAlternating(
             in IkSubChainBuildSettings settings,
+            int subChainIndex,
             Transform[] path,
-            out IkSubChainBuildResult result,
+            ref IkSubChainData result,
             out string error_message)
         {
-            result = new IkSubChainBuildResult();
             error_message = null;
 
             if (path == null || path.Length < 2)
@@ -50,29 +40,7 @@ namespace IKSystem.Builders
                 return false;
             }
 
-            int joint_count = CountJointsAlternating(in settings, path);
-            int bone_count = CountBonesAlternating(in settings, path);
-
-            if (joint_count < 1)
-            {
-                error_message = "Alternating chain required at least one joint.";
-                return false;
-            }
-
-            if (bone_count < 1)
-            {
-                error_message = "Alternating chain required at least one bone.";
-                return false;
-            }
-
-            IkJoint[] joints = new IkJoint[joint_count];
-            Vector3[] joint_world = new Vector3[joint_count];
-            BoneConstraint[] bones = new BoneConstraint[bone_count];
-            BoneEndpoints[] bone_world = new BoneEndpoints[bone_count];
-
-            IkSubChain sub_chain = BuildChainHeader(in settings, joint_count);
-
-            float final_bone_tolerance = ResolveFinalBoneTolerance(in settings, in sub_chain);
+            float final_bone_tolerance = ResolveFinalBoneTolerance(in settings);
             float final_bone_weight = Mathf.Clamp01(settings.bone_weight);
 
             Vector3 safe_primary_axis = IkBuildSafety.SafeNormalize(settings.primary_axis, Vector3.right, epsilon);
@@ -81,7 +49,6 @@ namespace IKSystem.Builders
             JointKind joint_kind = ResolveJointKind(in settings);
 
             int joint_write_index = 0;
-            int bone_write_index = 0;
 
             for (int path_index = 0; path_index < path.Length; path_index++)
             {
@@ -94,88 +61,124 @@ namespace IKSystem.Builders
 
                 if (IsBoneNodeAlternating(in settings, path_index))
                 {
-                    BoneEndpoints endpoints;
-                    if (!TryGetBoneEndpointsAlternating(in settings, path, path_index, out endpoints))
+                    bool prev_is_joint = path_index > 0 && !IsBoneNodeAlternating(in settings, path_index - 1);
+                    bool next_is_joint = (path_index + 1) < path.Length && !IsBoneNodeAlternating(in settings, path_index + 1);
+
+                    int parent_idx = prev_is_joint ? (joint_write_index - 1) : -1;
+                    int child_idx = next_is_joint ? joint_write_index : -1;
+
+                    Vector3 parent_pos = prev_is_joint ? path[path_index - 1].position : node.position;
+                    Vector3 child_pos = next_is_joint ? path[path_index + 1].position : node.position;
+
+                    float bone_length = ComputeBoneLength(in settings, parent_pos, child_pos);
+
+                    result.boneStates.Add(new BoneState
                     {
-                        error_message = "Failed to resolve bone endpoints.";
-                        return false;
-                    }
+                        Position = node.position,
+                        Rotation = node.rotation,
+                        LocalScale = node.localScale
+                    });
 
-                    bone_world[bone_write_index] = endpoints;
-
-                    float bone_length = ComputeBoneLength(in settings, endpoints.Parent, endpoints.Child);
-
-                    BoneConstraint bone = new BoneConstraint();
-                    bone.Length = bone_length;
-                    bone.Tolerance = final_bone_tolerance;
-                    bone.Weight = final_bone_weight;
-                    bones[bone_write_index] = bone;
-
-                    bone_write_index++;
+                    result.boneStatics.Add(new BoneStaticData
+                    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        Name = node.name,
+#endif
+                        ParentJointIndex = parent_idx,
+                        ChildJointIndex = child_idx,
+                        RestLength = bone_length,
+                        Weight = final_bone_weight,
+                        Tolerance = final_bone_tolerance
+                    });
                 }
                 else
                 {
-                    joint_world[joint_write_index] = node.position;
-
-                    IkJoint joint = new IkJoint();
-                    joint.JointIndex = joint_write_index;
-                    joint.Kind = joint_kind;
-
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    string jointName = node.name;
                     if (settings.joints_virtual)
                     {
-                        joint.PivotTransform = null;
+                        string parentName = (path_index > 0) ? path[path_index - 1].name : "Start";
+                        string childName = (path_index + 1 < path.Length) ? path[path_index + 1].name : "End";
+                        jointName = $"{parentName}-{childName} Joint";
                     }
-                    else
+#endif
+
+                    result.jointStates.Add(new JointState
                     {
-                        joint.PivotTransform = node;
-                    }
+                        world_position = node.position,
+                        world_rotation = node.rotation,
+                        previous_world_position = node.position,
+                        previous_world_rotation = node.rotation,
+                        count = 0
+                    });
 
-                    joint.Model = settings.joint_model;
-                    joint.PrimaryAxisLocal = safe_primary_axis;
-                    joint.PreferredBendNormalLocal = safe_bend_normal;
-                    joint.BranchPreference = settings.branch_pref;
-                    joint.BranchSwitchDeadbandDegrees = IkBuildSafety.ClampNonNegativeFinite(settings.branch_deadband);
-                    joint.MaxDeltaDegrees = IkBuildSafety.ClampNonNegativeFinite(settings.max_delta);
-
-                    joints[joint_write_index] = joint;
+                    result.jointStatics.Add(new JointStaticData
+                    {
+                    #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        name = jointName,
+                    #endif
+                        kind = joint_kind,
+                        model = settings.joint_model,
+                        primary_axis_local = safe_primary_axis,
+                        preferred_bend_normal_local = safe_bend_normal,
+                        branch_preference = settings.branch_pref,
+                        branch_deadband = IkBuildSafety.ClampNonNegativeFinite(settings.branch_deadband),
+                        max_delta_degrees = IkBuildSafety.ClampNonNegativeFinite(settings.max_delta),
+                        constraint = BuildJointConstraintData(in settings, safe_primary_axis, safe_bend_normal),
+                        sub_chain_index = subChainIndex
+                    });
                     joint_write_index++;
                 }
             }
 
-            if (joint_write_index != joint_count)
-            {
-                error_message = "Joint indexing failed.";
-                return false;
-            }
-
-            if (bone_write_index != bone_count)
-            {
-                error_message = "Bone indexing failed.";
-                return false;
-            }
-
-            result.sub_chain = sub_chain;
-            result.joints = joints;
-            result.joint_world = joint_world;
-            result.bones = bones;
-            result.bone_world = bone_world;
-
+            BuildChainState(in settings, ref result);
             return true;
         }
 
-        /* Build arrays from a non-alternating path (every node is a joint; bones are between adjacent joints).
-         * @param settings build settings
-         * @param path validated path
-         * @param result built data
-         * @param error_message failure reason
-         */
+        /*
+        * Builds model specific joint constraint data from chain build settings.
+        *
+        * @param settings Source chain build settings.
+        * @param safe_primary_axis Safe primary local axis.
+        * @param safe_bend_normal Safe bend normal local axis.
+        */
+        private static JointConstraintData BuildJointConstraintData(
+            in IkSubChainBuildSettings settings,
+            Vector3 safe_primary_axis,
+            Vector3 safe_bend_normal)
+        {
+            JointConstraintData constraint = default(JointConstraintData);
+
+            constraint.hinge_2d = new Hinge2DJointData
+            {
+                hinge_axis_local = safe_bend_normal,
+                reference_direction_local = safe_primary_axis,
+                min_angle_degrees = -180f,
+                max_angle_degrees = 180f,
+                use_limits = 0
+            };
+
+            constraint.ball_socket = new BallSocketJointData
+            {
+                swing_axis_local = safe_primary_axis,
+                reference_direction_local = safe_bend_normal,
+                max_swing_degrees = 180f,
+                min_twist_degrees = -180f,
+                max_twist_degrees = 180f,
+                use_swing_limit = 0,
+                use_twist_limit = 0
+            };
+
+            return constraint;
+        }
+
         public static bool TryBuildNonAlternating(
             in IkSubChainBuildSettings settings,
+            int subChainIndex,
             Transform[] path,
-            out IkSubChainBuildResult result,
+            ref IkSubChainData result,
             out string error_message)
         {
-            result = new IkSubChainBuildResult();
             error_message = null;
 
             if (path == null || path.Length < 2)
@@ -183,23 +186,11 @@ namespace IKSystem.Builders
                 error_message = "Invalid chain path.";
                 return false;
             }
+
             int joint_count = path.Length;
             int bone_count = joint_count - 1;
 
-            if (joint_count < 2)
-            {
-                error_message = "Non-alternating chain required at least two joints.";
-                return false;
-            }
-
-            IkJoint[] joints = new IkJoint[joint_count];
-            Vector3[] joint_world = new Vector3[joint_count];
-            BoneConstraint[] bones = new BoneConstraint[bone_count];
-            BoneEndpoints[] bone_world = new BoneEndpoints[bone_count];
-
-            IkSubChain sub_chain = BuildChainHeader(in settings, joint_count);
-
-            float final_bone_tolerance = ResolveFinalBoneTolerance(in settings, in sub_chain);
+            float final_bone_tolerance = ResolveFinalBoneTolerance(in settings);
             float final_bone_weight = Mathf.Clamp01(settings.bone_weight);
 
             Vector3 safe_primary_axis = IkBuildSafety.SafeNormalize(settings.primary_axis, Vector3.right, epsilon);
@@ -207,6 +198,7 @@ namespace IKSystem.Builders
 
             JointKind joint_kind = ResolveJointKind(in settings);
 
+            // 1. Build Joints
             for (int i = 0; i < joint_count; i++)
             {
                 Transform node = path[i];
@@ -216,97 +208,108 @@ namespace IKSystem.Builders
                     return false;
                 }
 
-                joint_world[i] = node.position;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                string jointName = settings.joints_virtual ? $"{node.name} (Virtual)" : node.name;
+#endif
 
-                IkJoint joint = new IkJoint();
-                joint.JointIndex = i;
-                joint.Kind = joint_kind;
-
-                if (settings.joints_virtual)
+                result.jointStates.Add(new JointState
                 {
-                    joint.PivotTransform = null;
-                }
-                else
+                    world_position = node.position,
+                    world_rotation = node.rotation,
+                    previous_world_position = node.position,
+                    previous_world_rotation = node.rotation,
+                    count = 0
+                });
+
+                result.jointStatics.Add(new JointStaticData
                 {
-                    joint.PivotTransform = node;
-                }
-
-                joint.Model = settings.joint_model;
-                joint.PrimaryAxisLocal = safe_primary_axis;
-                joint.PreferredBendNormalLocal = safe_bend_normal;
-                joint.BranchPreference = settings.branch_pref;
-                joint.BranchSwitchDeadbandDegrees = IkBuildSafety.ClampNonNegativeFinite(settings.branch_deadband);
-                joint.MaxDeltaDegrees = IkBuildSafety.ClampNonNegativeFinite(settings.max_delta);
-
-                joints[i] = joint;
+                #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    name = jointName,
+                #endif
+                    kind = joint_kind,
+                    model = settings.joint_model,
+                    primary_axis_local = safe_primary_axis,
+                    preferred_bend_normal_local = safe_bend_normal,
+                    branch_preference = settings.branch_pref,
+                    branch_deadband = IkBuildSafety.ClampNonNegativeFinite(settings.branch_deadband),
+                    max_delta_degrees = IkBuildSafety.ClampNonNegativeFinite(settings.max_delta),
+                    constraint = BuildJointConstraintData(in settings, safe_primary_axis, safe_bend_normal),
+                    sub_chain_index = subChainIndex
+                });
             }
 
+            // 2. Build Connecting Bones
             for (int b = 0; b < bone_count; b++)
             {
-                Vector3 parent_world = joint_world[b];
-                Vector3 child_world = joint_world[b + 1];
+                Transform current = path[b];
+                Transform next = path[b + 1];
 
-                BoneEndpoints endpoints = new BoneEndpoints();
-                endpoints.Parent = parent_world;
-                endpoints.Child = child_world;
-                bone_world[b] = endpoints;
+                float bone_length = ComputeBoneLength(in settings, current.position, next.position);
 
-                float bone_length = ComputeBoneLength(in settings, parent_world, child_world);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                string boneName = $"{current.name}-{next.name} Bone";
+#endif
 
-                BoneConstraint bone = new BoneConstraint();
-                bone.Length = bone_length;
-                bone.Tolerance = final_bone_tolerance;
-                bone.Weight = final_bone_weight;
-                bones[b] = bone;
+                result.boneStates.Add(new BoneState
+                {
+                    Position = current.position,
+                    Rotation = current.rotation,
+                    LocalScale = current.localScale
+                });
+
+                result.boneStatics.Add(new BoneStaticData
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Name = boneName, 
+#endif
+                    ParentJointIndex = b,
+                    ChildJointIndex = b + 1,
+                    RestLength = bone_length,
+                    Weight = final_bone_weight,
+                    Tolerance = final_bone_tolerance
+                });
             }
 
-            result.sub_chain = sub_chain;
-            result.joints = joints;
-            result.joint_world = joint_world;
-            result.bones = bones;
-            result.bone_world = bone_world;
-
+            BuildChainState(in settings, ref result);
             return true;
         }
 
         private static JointKind ResolveJointKind(in IkSubChainBuildSettings settings)
         {
-            if (settings.joints_virtual)
-            {
-                return JointKind.Virtual;
-            }
-
-            return JointKind.Transform;
+            return settings.joints_virtual ? JointKind.Virtual : JointKind.Transform;
         }
 
-        private static IkSubChain BuildChainHeader(in IkSubChainBuildSettings settings, int joint_count)
+        private static void BuildChainState(in IkSubChainBuildSettings settings, ref IkSubChainData result)
         {
-            IkSubChain chain = new IkSubChain();
-            chain.StartJointIndex = 0;
-            chain.EndJointIndex = joint_count - 1;
-            chain.Phase = settings.phase;
-            chain.RootPolicy = settings.root_policy;
-            chain.AnchorMode = settings.anchor_mode;
-            chain.PassOrder = settings.pass_order;
-            chain.MaxIterations = settings.max_iterations;
-            chain.Tolerance = IkBuildSafety.ClampNonNegativeFinite(settings.tolerance);
-            return chain;
+            result.chainState = new IKChainState
+            {
+                StartTargetPos = settings.start.position,
+                StartTargetRot = settings.start.rotation,
+                EndTargetPos = settings.end.position,
+                EndTargetRot = settings.end.rotation,
+
+                ElementStartIndex = 0,
+                ElementCount = result.jointStates.Count + result.boneStates.Count,
+                
+                SolveWeight = 1.0f,
+                ConstraintsEnabled = true,
+
+                Phase = settings.phase,
+                RootPolicy = settings.root_policy,
+                AnchorMode = settings.anchor_mode,
+                PassOrder = settings.pass_order,
+                MaxIterations = settings.max_iterations,
+                Tolerance = IkBuildSafety.ClampNonNegativeFinite(settings.tolerance)
+            };
         }
 
-        private static float ResolveFinalBoneTolerance(in IkSubChainBuildSettings settings, in IkSubChain sub_chain)
+        private static float ResolveFinalBoneTolerance(in IkSubChainBuildSettings settings)
         {
             float overridden = IkBuildSafety.ClampNonNegativeFinite(settings.bone_tolerance);
-            if (overridden > 0f)
-            {
-                return overridden;
-            }
+            if (overridden > 0f) return overridden;
 
-            float chain_tolerance = sub_chain.SafeTolerance(0f);
-            chain_tolerance = IkBuildSafety.ClampNonNegativeFinite(chain_tolerance);
-            if (chain_tolerance > 0f)
-            {
-                return chain_tolerance;
-            }
+            float chain_tolerance = IkBuildSafety.ClampNonNegativeFinite(settings.tolerance);
+            if (chain_tolerance > 0f) return chain_tolerance;
 
             return default_tolerance;
         }
@@ -326,153 +329,20 @@ namespace IKSystem.Builders
 
         private static float ComputeBoneLength(in IkSubChainBuildSettings settings, Vector3 parent_world_position, Vector3 child_world_position)
         {
-            if (!settings.compute_length)
-            {
-                return 0f;
-            }
+            if (!settings.compute_length) return 0f;
 
             Vector3 delta = child_world_position - parent_world_position;
             float distance = delta.magnitude;
 
-            if (!IkBuildSafety.IsFinite(distance))
-            {
-                return 0f;
-            }
-
-            if (distance <= epsilon)
-            {
-                return 0f;
-            }
+            if (!IkBuildSafety.IsFinite(distance) || distance <= epsilon) return 0f;
 
             return distance;
         }
 
-        private static int CountJointsAlternating(in IkSubChainBuildSettings settings, Transform[] path)
-        {
-            int count = 0;
-
-            for (int i = 0; i < path.Length; i++)
-            {
-                if (!IsBoneNodeAlternating(in settings, i))
-                {
-                    count++;
-                }
-            }
-
-            return count;
-        }
-
-        private static int CountBonesAlternating(in IkSubChainBuildSettings settings, Transform[] path)
-        {
-            int count = 0;
-
-            for (int i = 0; i < path.Length; i++)
-            {
-                if (IsBoneNodeAlternating(in settings, i))
-                {
-                    count++;
-                }
-            }
-
-            return count;
-        }
-
         private static bool IsBoneNodeAlternating(in IkSubChainBuildSettings settings, int path_index)
         {
-            if (settings.first_is_joint)
-            {
-                return (path_index % 2) == 1;
-            }
-
+            if (settings.first_is_joint) return (path_index % 2) == 1;
             return (path_index % 2) == 0;
-        }
-
-        private static bool TryGetBoneEndpointsAlternating(
-            in IkSubChainBuildSettings settings,
-            Transform[] path,
-            int path_index,
-            out BoneEndpoints endpoints)
-        {
-            endpoints = new BoneEndpoints();
-
-            if (path == null)
-            {
-                return false;
-            }
-
-            if (path_index < 0 || path_index >= path.Length)
-            {
-                return false;
-            }
-
-            if (!IsBoneNodeAlternating(in settings, path_index))
-            {
-                return false;
-            }
-
-            Transform bone_node = path[path_index];
-            if (bone_node == null)
-            {
-                return false;
-            }
-
-            bool has_prev = path_index > 0;
-            bool has_next = (path_index + 1) < path.Length;
-
-            Transform prev_node = null;
-            Transform next_node = null;
-
-            if (has_prev)
-            {
-                prev_node = path[path_index - 1];
-            }
-
-            if (has_next)
-            {
-                next_node = path[path_index + 1];
-            }
-
-            bool prev_is_joint = false;
-            bool next_is_joint = false;
-
-            if (prev_node != null)
-            {
-                if (!IsBoneNodeAlternating(in settings, path_index - 1))
-                {
-                    prev_is_joint = true;
-                }
-            }
-
-            if (next_node != null)
-            {
-                if (!IsBoneNodeAlternating(in settings, path_index + 1))
-                {
-                    next_is_joint = true;
-                }
-            }
-
-            if (prev_is_joint && next_is_joint)
-            {
-                endpoints.Parent = prev_node.position;
-                endpoints.Child = next_node.position;
-                return true;
-            }
-
-            if (!prev_is_joint && next_is_joint)
-            {
-                endpoints.Parent = bone_node.position;
-                endpoints.Child = next_node.position;
-                return true;
-            }
-
-            if (prev_is_joint && !next_is_joint)
-            {
-                endpoints.Parent = prev_node.position;
-                endpoints.Child = bone_node.position;
-                return true;
-            }
-
-            return false;
         }
     }
 }

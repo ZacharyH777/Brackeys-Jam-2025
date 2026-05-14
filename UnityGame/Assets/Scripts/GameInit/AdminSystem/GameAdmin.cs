@@ -6,10 +6,15 @@ namespace RunstarSystems.SystemAdmin
 {
     public class GameAdmin : MonoBehaviour
     {
-        private IGameSystem[] fixedSystems; // Priorities 1-10 
-        private IGameSystem[] updateSystems; // Priorities 11-30
+        private IGameSystem[] fixedSystems; // Priorities 1 - 10 
+        private IGameSystem[] updateSystems; // Priorities 11 - 30
         private IGameSystem[] lateSystems;   // Priorities 31+
 
+        /*
+        * This runs once before the scene loads.
+        * Sets up all registered systems to correctly manage unity
+        * scenes.
+        */
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Bootstrap()
         {
@@ -21,6 +26,11 @@ namespace RunstarSystems.SystemAdmin
             admin.Initialize(systems);
         }
 
+        /*
+        * This takes all the systems with a tick requirement
+        * and sorts the order. This means each system needs to determine
+        * where it fits in the pipeline.
+        */
         public void Initialize(List<IGameSystem> systems)
         {
             // Sort all systems by priority first
@@ -36,7 +46,7 @@ namespace RunstarSystems.SystemAdmin
                 system.Setup();
         }
 
-        // Runs at the Physics rate
+        // Priorities 1 - 10
         void FixedUpdate()
         {
             float dt = Time.fixedDeltaTime;
@@ -46,7 +56,7 @@ namespace RunstarSystems.SystemAdmin
             }
         }
 
-        // Runs once per frame. Good for general Game Rules and Input
+        // Priorities 11 - 30
         void Update()
         {
             float dt = Time.deltaTime;
@@ -56,7 +66,7 @@ namespace RunstarSystems.SystemAdmin
             }
         }
 
-        // Runs after Update.
+        // Priorities 31+
         void LateUpdate()
         {
             float dt = Time.deltaTime;

@@ -1,7 +1,7 @@
 ﻿// File: IKSystem/Builders/Path/ChainPathResolver.cs
 using UnityEngine;
 
-namespace IKSystem.Builders.Path
+namespace RunstarSystems.IKSystem.Builders.Path
 {
     public static class ChainPathResolver
     {

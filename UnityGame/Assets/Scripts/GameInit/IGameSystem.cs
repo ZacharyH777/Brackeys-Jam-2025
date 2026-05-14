@@ -1,5 +1,7 @@
-﻿namespace RunstarSystems
+﻿namespace RunstarSystems.SystemAdmin
 {
+    // Required interface for the game system to work
+    // @TODO: Not quite sure how to manage scope in this yet
     public interface IGameSystem
     {
         void Setup();
